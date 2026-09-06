@@ -130,7 +130,7 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
       <AnimatedContent delay={0.05}>
         <h2 className="section-title">
           Consistency graph — {g.contradiction_count} contradiction{g.contradiction_count === 1 ? "" : "s"} /{" "}
-          {g.edge_count} checks · ρ&nbsp;=&nbsp;{g.contradiction_density}
+          {g.edge_count} checks · density {g.contradiction_density}
         </h2>
         <ConsistencyGraph graph={g} />
       </AnimatedContent>

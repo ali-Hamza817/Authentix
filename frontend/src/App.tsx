@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import Header from "./components/Header";
 import UploadPanel from "./components/UploadPanel";
 import Loading from "./components/Loading";
@@ -38,6 +38,7 @@ export default function App() {
   }, []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <div className="app">
       <Header onHome={phase === "done" ? reset : undefined} />
 
@@ -83,5 +84,6 @@ export default function App() {
 
       <Footer />
     </div>
+    </MotionConfig>
   );
 }

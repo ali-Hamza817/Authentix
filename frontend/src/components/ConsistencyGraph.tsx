@@ -21,7 +21,7 @@ export default function ConsistencyGraphView({ graph }: { graph: ConsistencyGrap
               <th>Expectation</th>
               <th>Observed</th>
               <th>Status</th>
-              <th className="decg__num">κ</th>
+              <th className="decg__num">divergence</th>
             </tr>
           </thead>
           <tbody>
@@ -52,8 +52,8 @@ export default function ConsistencyGraphView({ graph }: { graph: ConsistencyGrap
         <Stat label="edges" value={graph.edge_count} />
         <Stat label="contradictions" value={graph.contradiction_count} tone="var(--bad)" />
         <Stat label="weak" value={graph.weak_count} tone="var(--guard)" />
-        <Stat label="density ρ" value={graph.contradiction_density} />
-        <Stat label="mean κ" value={graph.mean_kappa} />
+        <Stat label="contradiction density" value={graph.contradiction_density} />
+        <Stat label="mean divergence" value={graph.mean_kappa} />
       </div>
     </div>
   );

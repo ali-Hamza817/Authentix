@@ -22,9 +22,8 @@ export default function Findings({ findings }: { findings: Finding[] }) {
           <motion.div
             key={f.code + i}
             initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.3), ease: [0.22, 1, 0.36, 1] }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.35), ease: [0.22, 1, 0.36, 1] }}
           >
             <SpotlightCard className="finding card" spotlightColor={sev.soft}>
               <div className="finding__bar" style={{ background: sev.color }} />

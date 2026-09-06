@@ -34,9 +34,8 @@ export default function EwdcaPanel({ ewdca }: { ewdca: Ewdca }) {
                     className="ewdca__fill"
                     style={{ background: bad ? "var(--warn)" : "var(--ok)" }}
                     initial={{ width: 0 }}
-                    whileInView={{ width: `${Math.max(2, value * 100)}%` }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                    animate={{ width: value > 0 ? `${Math.max(3, value * 100)}%` : "0%" }}
+                    transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
                   />
                 </span>
               </div>
