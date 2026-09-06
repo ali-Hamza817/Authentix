@@ -1,0 +1,123 @@
+/* ---------- ShinyText ---------- */
+.rb-shiny {
+  color: var(--ink-3);
+  background: linear-gradient(
+    110deg,
+    currentColor 40%,
+    var(--brand-bright) 50%,
+    currentColor 60%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: rb-shine linear infinite;
+}
+.rb-shiny--off {
+  animation: none;
+  -webkit-text-fill-color: currentColor;
+}
+@keyframes rb-shine {
+  0% {
+    background-position: 220% 0;
+  }
+  100% {
+    background-position: -220% 0;
+  }
+}
+
+/* ---------- GradientText ---------- */
+.rb-gradient {
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.rb-gradient--flow {
+  animation: rb-flow 6s linear infinite;
+}
+@keyframes rb-flow {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* ---------- SpotlightCard ---------- */
+.rb-spotlight {
+  position: relative;
+  overflow: hidden;
+  --rb-opacity: 0;
+}
+.rb-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--rb-opacity, 0);
+  transition: opacity 0.35s var(--ease-out);
+  background: radial-gradient(
+    340px circle at var(--rb-x, 50%) var(--rb-y, 0),
+    var(--rb-spot, var(--brand-glow)),
+    transparent 60%
+  );
+}
+
+/* ---------- GradientButton ---------- */
+.rb-gbtn {
+  position: relative;
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  padding: 13px 22px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.01em;
+  color: #fff;
+  background: linear-gradient(120deg, var(--brand), var(--brand-bright));
+  box-shadow: var(--shadow-brand);
+  overflow: hidden;
+  transition: transform 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out),
+    filter 0.2s var(--ease-out);
+}
+.rb-gbtn__label {
+  position: relative;
+  z-index: 1;
+}
+.rb-gbtn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 70%
+  );
+}
+.rb-gbtn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+.rb-gbtn:hover::after {
+  transition: transform 0.75s var(--ease-out);
+  transform: translateX(120%);
+}
+.rb-gbtn:active {
+  transform: translateY(0);
+}
+.rb-gbtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.rb-gbtn--ghost {
+  background: transparent;
+  color: var(--brand-bright);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.rb-gbtn--ghost:hover {
+  box-shadow: inset 0 0 0 1px var(--brand-bright);
+  filter: none;
+}

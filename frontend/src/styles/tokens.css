@@ -1,0 +1,141 @@
+/* ============================================================
+   Authentix design tokens
+   Geometric sans (Poppins) · cyanotype-blue brand · forensic
+   semantic palette. Light is the base; dark redefines tokens only.
+   ============================================================ */
+:root {
+  /* surfaces */
+  --bg: #f6f5f1;
+  --bg-tint: #eef0ec;
+  --surface: #ffffff;
+  --surface-2: #f4f3ef;
+  --surface-inset: #f0efe9;
+
+  /* ink */
+  --ink: #16181d;
+  --ink-2: #4a4f57;
+  --ink-3: #7c828b;
+  --line: #e2ded2;
+  --line-strong: #cfc9ba;
+
+  /* brand — cyanotype blue */
+  --brand: #1f5c79;
+  --brand-bright: #2e83ab;
+  --brand-ink: #0d3a4d;
+  --brand-soft: #e4eef2;
+  --brand-glow: rgba(46, 131, 171, 0.35);
+
+  /* semantic bands */
+  --ok: #2f8f5b;
+  --ok-soft: #e3f1e8;
+  --guard: #b7791f;
+  --guard-soft: #f6ecd8;
+  --warn: #c2410c;
+  --warn-soft: #f8e6da;
+  --bad: #b42318;
+  --bad-soft: #f7e0dd;
+  --unknown: #6b7280;
+
+  /* elevation */
+  --shadow-sm: 0 1px 2px rgba(20, 24, 32, 0.06), 0 1px 3px rgba(20, 24, 32, 0.05);
+  --shadow-md: 0 4px 12px rgba(20, 24, 32, 0.08), 0 2px 6px rgba(20, 24, 32, 0.05);
+  --shadow-lg: 0 18px 48px rgba(16, 34, 46, 0.14), 0 6px 16px rgba(16, 34, 46, 0.08);
+  --shadow-brand: 0 12px 34px rgba(31, 92, 121, 0.22);
+
+  /* geometry */
+  --r-xs: 8px;
+  --r-sm: 11px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-pill: 999px;
+
+  /* type */
+  --font: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --fs-eyebrow: 0.72rem;
+  --fs-body: 0.98rem;
+  --fs-lead: 1.075rem;
+  --lh-body: 1.62;
+
+  /* motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg: #0d1014;
+  --bg-tint: #12161c;
+  --surface: #161b22;
+  --surface-2: #1c222b;
+  --surface-inset: #10151b;
+
+  --ink: #e8eaed;
+  --ink-2: #a9b0ba;
+  --ink-3: #767d88;
+  --line: #29313c;
+  --line-strong: #38414e;
+
+  --brand: #4fa8cc;
+  --brand-bright: #6cc0e0;
+  --brand-ink: #bfe4f1;
+  --brand-soft: #14313e;
+  --brand-glow: rgba(108, 192, 224, 0.32);
+
+  --ok: #5cc088;
+  --ok-soft: #14291f;
+  --guard: #dcae63;
+  --guard-soft: #2c2416;
+  --warn: #e2895c;
+  --warn-soft: #2e1e15;
+  --bad: #e2726f;
+  --bad-soft: #2f1a1a;
+  --unknown: #8a919c;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 52px rgba(0, 0, 0, 0.55);
+  --shadow-brand: 0 14px 38px rgba(20, 49, 62, 0.6);
+
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d1014;
+    --bg-tint: #12161c;
+    --surface: #161b22;
+    --surface-2: #1c222b;
+    --surface-inset: #10151b;
+
+    --ink: #e8eaed;
+    --ink-2: #a9b0ba;
+    --ink-3: #767d88;
+    --line: #29313c;
+    --line-strong: #38414e;
+
+    --brand: #4fa8cc;
+    --brand-bright: #6cc0e0;
+    --brand-ink: #bfe4f1;
+    --brand-soft: #14313e;
+    --brand-glow: rgba(108, 192, 224, 0.32);
+
+    --ok: #5cc088;
+    --ok-soft: #14291f;
+    --guard: #dcae63;
+    --guard-soft: #2c2416;
+    --warn: #e2895c;
+    --warn-soft: #2e1e15;
+    --bad: #e2726f;
+    --bad-soft: #2f1a1a;
+    --unknown: #8a919c;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 20px 52px rgba(0, 0, 0, 0.55);
+    --shadow-brand: 0 14px 38px rgba(20, 49, 62, 0.6);
+
+    color-scheme: dark;
+  }
+}

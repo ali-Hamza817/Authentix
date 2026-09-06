@@ -1,0 +1,30 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+out/
+
+# Analyzer output
+samples/*.json
+samples/*.html
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+.vite/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.log
+
+# Working docs / thesis material — not part of the shipped product.
+# Delete these lines if you want them tracked in the public repo.
+product-description.txt
+doctrust-x-design.html

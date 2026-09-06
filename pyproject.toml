@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "authentix"
+version = "0.1.0"
+description = "Digital document authenticity & provenance analyzer"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pypdf>=5.1",
+    "python-dateutil>=2.9",
+    "cryptography>=43.0.1",
+]
+
+[project.optional-dependencies]
+server = ["fastapi>=0.115", "uvicorn>=0.30", "python-multipart>=0.0.9"]
+
+[project.scripts]
+authentix = "authentix.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["authentix*"]

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Authentix — Document Authenticity Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="wordmark">Authent<span>ix</span></div>
+    <p class="tagline">Digital document authenticity &amp; provenance analysis — who created it, when, and what changed since.</p>
+  </header>
+
+  <!-- ---------------- upload ---------------- -->
+  <section id="uploader" class="uploader">
+    <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Choose or drop a document">
+      <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true">
+        <path d="M12 16V4M12 4l-4 4M12 4l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <p class="dz-main">Drop a document here, or <span class="link">browse</span></p>
+      <p class="dz-sub">PDF · DOCX · XLSX · PPTX &nbsp;—&nbsp; analysed locally, nothing leaves this machine</p>
+      <input type="file" id="fileInput" accept=".pdf,.docx,.xlsx,.pptx,.doc,.xls,.ppt" hidden>
+    </div>
+    <p id="uploadError" class="upload-error" hidden></p>
+  </section>
+
+  <!-- ---------------- loading ---------------- -->
+  <section id="loading" class="loading" hidden>
+    <div class="spinner" aria-hidden="true"></div>
+    <p>Extracting forensic evidence…</p>
+  </section>
+
+  <!-- ---------------- report ---------------- -->
+  <main id="report" class="report" hidden></main>
+
+  <footer class="foot">
+    Authentix — heuristic forensic analysis. A low score flags <em>inconsistency</em>, not proven forgery;
+    a high score is not a guarantee of authenticity.
+  </footer>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
