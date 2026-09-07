@@ -15,6 +15,7 @@ samples/*.html
 # Frontend
 frontend/node_modules/
 frontend/dist/
+frontend/e2e/out/
 *.tsbuildinfo
 .vite/
 

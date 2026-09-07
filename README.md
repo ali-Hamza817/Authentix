@@ -52,6 +52,10 @@ npm --prefix frontend run build     # emits frontend/dist, which server.py serve
 
 # live development (Vite on :5173, proxies /api to :8000):
 npm --prefix frontend run dev
+
+# UI smoke test — uploads every ./samples file, checks the report renders
+# (needs a running server + `npx playwright install chromium` once):
+npm --prefix frontend run e2e            # BASE=http://127.0.0.1:8010 to point elsewhere
 ```
 
 If `frontend/dist` is absent, `server.py` falls back to the dependency-free UI in
@@ -82,7 +86,12 @@ document ─▶ intake ─▶ evidence extraction ─▶ normalization ─▶ DE
 2. **Evidence extraction** — pull DocInfo + XMP metadata, physical structure
    (objects, XRef, incremental updates, streams, active content), digital
    signatures (`/ByteRange` coverage, PKCS#7 signer certificate) and provenance
-   (tool-family fingerprint) — see `authentix/evidence/`.
+   — see `authentix/evidence/`. The producer string is classified as an
+   *application*, a *generator* (from-scratch / HTML-to-PDF: reportlab,
+   wkhtmltopdf, …) or a *manipulator* (pypdf, iText, Ghostscript, qpdf, … —
+   tools that rewrite an existing PDF). A file last written by a manipulator,
+   with its author and dates gone, is flagged `programmatic_rewrite` and its
+   origin is reported as **not established** rather than a wall of "unknown".
 3. **DECG** (`authentix/decg.py`) — build the *Document Evidence Consistency
    Graph*: nodes are evidence, edges are *forensic expectations* (e.g. "creation
    ≤ modification", "signature covers the whole file", "producer matches the

@@ -112,6 +112,7 @@ export interface Report {
     tampering_detected: boolean;
     tampering_count: number;
     findings_total: number;
+    origin_known: boolean;
   };
   origin: {
     author: string | null;
@@ -121,6 +122,8 @@ export interface Report {
     creator_tool_xmp: string | null;
     creation_date: string | null;
     modification_date: string | null;
+    tool_kind: "application" | "generator" | "manipulator" | null;
+    library: string | null;
     toolchain_inference: string;
   };
   timeline: TimelineEvent[];

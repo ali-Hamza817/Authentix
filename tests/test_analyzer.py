@@ -13,6 +13,7 @@ from authentix.analyzer import analyze_bytes  # noqa: E402
 from tests.make_samples import (  # noqa: E402
     build_docx,
     build_pdf,
+    build_pypdf_rewrite,
     build_signed_then_modified,
 )
 
@@ -83,6 +84,25 @@ def test_modified_after_signing():
         for e in rep["consistency_graph"]["edges"]
     )
     assert rep["summary"]["band"] in ("Suspicious", "Untrusted")
+
+
+def test_pypdf_rewrite_stripped_is_flagged():
+    rep = analyze_bytes(build_pypdf_rewrite(keep_metadata=False), "rewrite.pdf")
+    codes = _codes(rep)
+    assert "programmatic_rewrite" in codes
+    assert rep["summary"]["origin_known"] is False
+    assert rep["origin"]["tool_kind"] == "manipulator"
+    assert rep["summary"]["band"] in ("Guarded", "Suspicious")
+    assert rep["summary"]["credibility_score"] < 80
+    assert rep["origin"]["toolchain_inference"]  # never empty
+    assert "origin cannot be established" in rep["summary"]["verdict"]
+
+
+def test_pypdf_rewrite_with_metadata_stays_credible():
+    rep = analyze_bytes(build_pypdf_rewrite(keep_metadata=True), "rewrite2.pdf")
+    assert "programmatic_rewrite" in _codes(rep)
+    assert rep["summary"]["origin_known"] is True
+    assert rep["summary"]["band"] in ("Credible", "Guarded")
 
 
 def test_clean_docx_is_credible():

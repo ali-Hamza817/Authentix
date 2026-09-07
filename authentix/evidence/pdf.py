@@ -450,17 +450,52 @@ def analyze(data: bytes) -> dict:
     creator = (docinfo.get("creator") or "").strip()
     producer = (docinfo.get("producer") or "").strip()
     ctool = (xmp.get("creator_tool") or "").strip()
+    author = (docinfo.get("author") or "").strip()
     history = xmp.get("history") or []
     prov_conf = 1.0
+    has_origin = bool(c_dt or x_c or author)
+    last_producer = structure["producers_seen"][-1] if structure["producers_seen"] else producer
+    library = util.pdf_library_name(producer) or util.pdf_library_name(ctool) or util.pdf_library_name(last_producer)
+    kind = (util.pdf_tool_kind(producer) or util.pdf_tool_kind(ctool) or util.pdf_tool_kind(last_producer))
+    tool_kind = kind or ("application" if (creator or producer or ctool) else None)
 
     if not creator and not producer and not ctool:
-        prov_conf -= 0.4
+        prov_conf -= 0.45
         F.append(_finding("metadata_scrubbed", 3, "provenance",
-            "Authoring metadata is missing",
-            "No /Creator, /Producer or XMP CreatorTool is present. Metadata has been stripped, or the file was "
-            "produced by a tool that deliberately omits it. Either way, the origin cannot be corroborated.",
+            "All authoring metadata is missing",
+            "No /Creator, /Producer or XMP CreatorTool is present, and there is no author or date. Every trace of "
+            "how and by whom this file was made has been removed. The origin cannot be corroborated at all.",
             {}))
     else:
+        shown = producer or ctool or last_producer
+        if kind == "manipulator":
+            sev = 3 if not has_origin else 2
+            prov_conf -= 0.34 if not has_origin else 0.22
+            F.append(_finding("programmatic_rewrite", sev, "provenance",
+                "Last written by a PDF manipulation tool, not an authoring application",
+                f"The most recent tool to write this file is “{shown}”, a PDF library used to rewrite existing "
+                f"documents (merge, split, stamp, fill, strip). The file has been through an automated step that "
+                f"routinely removes the author, dates and XMP history and can add, delete or alter page content, "
+                f"watermarks or form data. Any metadata still present describes that step, not the original document.",
+                {"tool": shown, "kind": "manipulator"}))
+        elif kind == "generator":
+            prov_conf -= 0.12
+            F.append(_finding("machine_generated", 1, "provenance",
+                "Machine-generated document",
+                f"The file was produced by “{shown}”, a from-scratch / HTML-to-PDF generator rather than an "
+                f"application a person authors in. This is normal for automated documents (statements, invoices, "
+                f"exported reports); it means there is no human authoring trail to corroborate.",
+                {"tool": shown, "kind": "generator"}))
+
+        if not has_origin and not kind:
+            prov_conf -= 0.28
+            F.append(_finding("origin_metadata_absent", 2, "provenance",
+                "No author or creation date is recorded",
+                "The file names a producer but carries no author, no creation date and no XMP creation time. The "
+                "“who” and “when” of the document are not recoverable from it — either they were never written, or "
+                "a later step removed them.",
+                {"producer": producer or None}))
+
         mm = _toolchain_mismatch(creator, producer, ctool, history)
         if mm:
             sev, msg = mm
@@ -582,5 +617,8 @@ def analyze(data: bytes) -> dict:
         "creator_tool": ctool or None,
         "author": docinfo.get("author"),
         "title": docinfo.get("title") or xmp.get("title"),
+        "tool_kind": tool_kind,
+        "library": library,
+        "origin_known": has_origin,
     }
     return ev

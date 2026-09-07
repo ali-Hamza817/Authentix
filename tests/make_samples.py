@@ -84,6 +84,26 @@ def build_pdf(
     return bytes(out)
 
 
+def build_pypdf_rewrite(keep_metadata=False):
+    """A clean PDF re-saved by pypdf — i.e. a programmatic manipulation step."""
+    from pypdf import PdfReader, PdfWriter
+
+    w = PdfWriter()
+    w.append(PdfReader(io.BytesIO(build_pdf(creation="D:20240104120000Z", mod="D:20240104120000Z"))))
+    if keep_metadata:
+        w.add_metadata(
+            {
+                "/Author": "Jane Doe",
+                "/Creator": "Microsoft Word",
+                "/CreationDate": "D:20240104120000Z",
+                "/ModDate": "D:20240104120000Z",
+            }
+        )
+    buf = io.BytesIO()
+    w.write(buf)
+    return buf.getvalue()
+
+
 def build_signed_then_modified():
     base = build_pdf(creation="D:20240101120000Z", mod="D:20240101120000Z")
     sig = (
@@ -202,6 +222,10 @@ SAMPLE_SET = {
     ),
     # content appended after a signature
     "signed_then_modified.pdf": build_signed_then_modified,
+    # re-saved by a PDF library with metadata stripped
+    "pypdf_rewrite_stripped.pdf": lambda: build_pypdf_rewrite(keep_metadata=False),
+    # re-saved by a PDF library but metadata preserved
+    "pypdf_rewrite_kept_meta.pdf": lambda: build_pypdf_rewrite(keep_metadata=True),
     # ---- DOCX ----
     "clean.docx": lambda: build_docx(),
     "docx_modified_before_created.docx": lambda: build_docx(

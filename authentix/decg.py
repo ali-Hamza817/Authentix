@@ -113,14 +113,20 @@ def _pdf_edges(ev, edges, c, m, st, F):
     # toolchain: authoring app vs producer
     hard = _has(F, "producer_creator_mismatch", 3)
     soft = _has(F, "producer_creator_mismatch", 2) and not hard
-    if hard or soft or ev.get("_derived", {}).get("producer"):
+    lib = bool(ev.get("_derived", {}).get("library"))
+    if hard or soft or lib or ev.get("_derived", {}).get("producer"):
+        if hard:
+            status, k, obs = "contradiction", 0.9, "mismatch, no history bridge"
+        elif soft:
+            status, k, obs = "weak", 0.5, "mismatch, no history bridge"
+        elif lib:
+            status, k, obs = "weak", 0.5, "producer is a library — cannot corroborate the authoring app"
+        else:
+            status, k, obs = "consistent", 0.0, "consistent"
         edges.append(_edge(
             "toolchain", "Creator / CreatorTool", "Producer",
             "producer is consistent with the authoring application",
-            "contradiction" if hard else ("weak" if soft else "consistent"),
-            0.9 if hard else (0.5 if soft else 0.0),
-            "same tool family or a recorded export step",
-            "mismatch, no history bridge" if (hard or soft) else "consistent",
+            status, k, "same tool family or a recorded export step", obs,
         ))
 
     # XMP vs DocInfo creation instant

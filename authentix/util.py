@@ -117,3 +117,46 @@ def days_between(a, b):
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
+
+
+# PDF tooling that isn't an application a person authors in.
+#
+# GENERATORS build a PDF from scratch or from HTML — often the legitimate origin of
+# a machine-made document (an invoice, a report). Worth noting, not alarming.
+_PDF_GENERATORS = (
+    "reportlab", "wkhtmltopdf", "weasyprint", "prince", "tcpdf", "mpdf", "dompdf", "fpdf",
+    "jspdf", "pdfmake", "pdfkit", "gofpdf", "apache fop", "prawn", "rinohtype", "typst",
+    "laravel-dompdf", "playwright", "puppeteer", "chrome headless", "chromium",
+)
+# MANIPULATORS take an existing PDF and rewrite it — merge, split, stamp, fill, strip,
+# linearise. A file last written by one of these has been through an automated step
+# that commonly drops author/dates/XMP and can alter page content.
+_PDF_MANIPULATORS = (
+    "pypdf", "pypdf2", "pdf-lib", "itext", "itextsharp", "pdfbox", "pdfsharp", "pikepdf",
+    "qpdf", "mutool", "mupdf", "pymupdf", "ghostscript", "cpdf", "pdftk", "sejda", "hexapdf",
+    "ilovepdf", "smallpdf", "pdf24", "aspose", "spire.pdf", "openpdf", "lowagie", "pdfrw",
+    "borb", "pdf::api2", "cam::pdf", "unidoc", "unipdf", "pdf-writer", "coherentpdf",
+)
+
+
+def pdf_tool_kind(s: str | None) -> str | None:
+    """Classify a producer/creator string: ``"generator"``, ``"manipulator"`` or ``None``."""
+    if not s:
+        return None
+    low = s.lower()
+    if any(t in low for t in _PDF_MANIPULATORS):
+        return "manipulator"
+    if any(t in low for t in _PDF_GENERATORS):
+        return "generator"
+    return None
+
+
+def pdf_library_name(s: str | None) -> str | None:
+    """Return the library token if ``s`` names any known PDF library/tool, else ``None``."""
+    if not s:
+        return None
+    low = s.lower()
+    for tok in (*_PDF_MANIPULATORS, *_PDF_GENERATORS):
+        if tok in low:
+            return tok
+    return None

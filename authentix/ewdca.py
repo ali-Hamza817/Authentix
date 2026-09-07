@@ -132,6 +132,10 @@ def score(ev: dict, decg: dict) -> dict:
     if any(f["severity"] == 4 for f in ev.get("findings", [])) and cap > 72:
         high = next(f for f in ev["findings"] if f["severity"] == 4)
         cap, cap_reason = 72, f"a high-severity finding ({high['title'].lower()})"
+    if P <= 0.5 and cap > 70:
+        # If we cannot establish where the document came from, it cannot be "Credible",
+        # however internally consistent the bytes are.
+        cap, cap_reason = 70, "provenance could not be established"
 
     capped = None
     if cred > cap:

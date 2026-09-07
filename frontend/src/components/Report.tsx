@@ -9,6 +9,7 @@ import {
   PenLine,
   ShieldAlert,
   ShieldCheck,
+  Info,
 } from "lucide-react";
 import type { Report } from "../lib/types";
 import { fmtBytes, fmtDateTime } from "../lib/format";
@@ -28,23 +29,32 @@ function Fact({
   icon,
   label,
   value,
-  tone,
+  badge,
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
-  tone?: "bad" | "ok";
+  value: string | null;
+  badge?: string;
 }) {
+  const missing = value == null || value === "";
   return (
     <div className="fact">
       <span className="fact__icon">{icon}</span>
       <div>
         <p className="fact__label">{label}</p>
-        <p className={`fact__value ${tone ? `is-${tone}` : ""}`}>{value}</p>
+        <p className={`fact__value ${missing ? "is-missing" : ""}`}>
+          {missing ? "not recorded" : value}
+          {badge && !missing && <span className="fact__badge">{badge}</span>}
+        </p>
       </div>
     </div>
   );
 }
+
+const TOOL_BADGE: Record<string, string> = {
+  manipulator: "library",
+  generator: "generated",
+};
 
 export default function ReportView({ report, onReset }: { report: Report; onReset: () => void }) {
   const s = report.summary;
@@ -93,13 +103,38 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
           </div>
         </div>
 
+        {!s.origin_known && (
+          <div className="rep__originNote">
+            <Info size={16} />
+            <span>
+              <b>Origin not established.</b> This file carries no author and no creation date — either they were
+              never written, or a later processing step removed them. The tools below are the last software to
+              write the file, not necessarily who authored it. See the findings.
+            </span>
+          </div>
+        )}
+
         <div className="rep__facts">
-          <Fact icon={<Clock3 size={16} />} label="Created" value={fmtDateTime(s.created.when)} />
-          <Fact icon={<UserRound size={16} />} label="Created by" value={s.created.by ?? "unknown"} />
-          <Fact icon={<Wrench size={16} />} label="Creating tool" value={s.created.tool ?? "unknown"} />
-          <Fact icon={<PenLine size={16} />} label="Last modified" value={fmtDateTime(s.last_modified.when)} />
-          <Fact icon={<UserRound size={16} />} label="Last modified by" value={s.last_modified.by ?? "unknown"} />
-          <Fact icon={<Wrench size={16} />} label="Modifying tool" value={s.last_modified.tool ?? "unknown"} />
+          <Fact icon={<Clock3 size={16} />} label="Created" value={s.created.when ? fmtDateTime(s.created.when) : null} />
+          <Fact icon={<UserRound size={16} />} label="Created by" value={s.created.by} />
+          <Fact
+            icon={<Wrench size={16} />}
+            label="Creating tool"
+            value={s.created.tool}
+            badge={report.origin.tool_kind ? TOOL_BADGE[report.origin.tool_kind] : undefined}
+          />
+          <Fact
+            icon={<PenLine size={16} />}
+            label="Last modified"
+            value={s.last_modified.when ? fmtDateTime(s.last_modified.when) : null}
+          />
+          <Fact icon={<UserRound size={16} />} label="Last modified by" value={s.last_modified.by} />
+          <Fact
+            icon={<Wrench size={16} />}
+            label="Modifying tool"
+            value={s.last_modified.tool}
+            badge={report.origin.tool_kind ? TOOL_BADGE[report.origin.tool_kind] : undefined}
+          />
         </div>
 
         <p className="rep__toolchain">
