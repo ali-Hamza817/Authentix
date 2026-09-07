@@ -142,6 +142,50 @@ _DOCUMENT_XML = (
 )
 
 
+def build_attribution_demo_docx():
+    """A .docx that leaks a Windows username, a UNC host, a v1-UUID MAC and a +05:00 timezone."""
+    users = "Users" + chr(92) + "a.hamza"  # avoid \U escape headaches
+    tpl_target = "file:///C:" + chr(92) + users + chr(92) + "AppData" + chr(92) + "Roaming" + chr(92) + "corp.dotx"
+    unc_target = chr(92) + chr(92) + "FILES-DC01" + chr(92) + "legal" + chr(92) + "logo.png"
+    doc_rels = (
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+        f'<Relationship Id="rTpl" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate" '
+        f'Target="{tpl_target}" TargetMode="External"/>'
+        f'<Relationship Id="rImg" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" '
+        f'Target="{unc_target}" TargetMode="External"/></Relationships>'
+    )
+    document = (
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+        'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml">'
+        '<w15:docId w15:val="{f81d4fae-7dec-11d0-a765-00a0c91e6bf6}"/>'
+        "<w:body><w:p><w:r><w:t>Attribution demo.</w:t></w:r></w:p></w:body></w:document>"
+    )
+    core = (
+        '<?xml version="1.0"?><cp:coreProperties '
+        'xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" '
+        'xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" '
+        'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'
+        "<dc:creator>Ali Hamza</dc:creator><cp:lastModifiedBy>a.hamza</cp:lastModifiedBy><cp:revision>4</cp:revision>"
+        '<dcterms:created xsi:type="dcterms:W3CDTF">2024-06-01T09:15:00+05:00</dcterms:created>'
+        '<dcterms:modified xsi:type="dcterms:W3CDTF">2024-06-01T10:05:00+05:00</dcterms:modified></cp:coreProperties>'
+    )
+    app = (
+        '<?xml version="1.0"?><Properties '
+        'xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties">'
+        "<Application>Microsoft Office Word</Application><AppVersion>16.0000</AppVersion>"
+        "<Company>Authentix Labs</Company><Manager>S. Khan</Manager></Properties>"
+    )
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("[Content_Types].xml", _CONTENT_TYPES)
+        z.writestr("_rels/.rels", _ROOT_RELS)
+        z.writestr("word/_rels/document.xml.rels", doc_rels)
+        z.writestr("word/document.xml", document)
+        z.writestr("docProps/core.xml", core)
+        z.writestr("docProps/app.xml", app)
+    return buf.getvalue()
+
+
 def build_docx(
     created="2024-02-01T09:00:00Z",
     modified="2024-02-01T09:20:00Z",
@@ -240,6 +284,7 @@ SAMPLE_SET = {
         revision="1", total_time="240",
     ),
     "docx_with_macro.docx": lambda: build_docx(with_macro=True),
+    "attribution_demo.docx": build_attribution_demo_docx,
 }
 
 

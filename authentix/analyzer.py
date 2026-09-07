@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import traceback
 
+from . import attribution as _attribution
 from . import decg as _decg
 from . import ewdca as _ewdca
 from . import intake as _intake
@@ -39,6 +40,17 @@ def analyze_bytes(data: bytes, filename: str = "document") -> dict:
         ))
 
     ev.setdefault("errors", []).extend(errors)
+
+    try:
+        attr = _attribution.extract(data, ev, ik.fmt)
+        ev["attribution"] = attr["block"]
+        ev.setdefault("findings", []).extend(attr["findings"])
+    except Exception as e:  # pragma: no cover - defensive
+        ev["attribution"] = {
+            "summary": {"people": [], "verified_people": [], "has_device_traces": False, "signals": 0},
+            "identities": [], "device": {}, "network": {}, "geolocation": {}, "notes": [],
+        }
+        ev["errors"].append(_err("attribution", e))
 
     try:
         graph = _decg.build(ev)

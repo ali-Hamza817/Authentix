@@ -92,6 +92,34 @@ def main(argv=None) -> int:
         note = f"  ({e['note']})" if e.get("note") else ""
         print(f"    {when}  {e['label']}   [{e['source']}]{note}")
 
+    attr = rep.get("attribution", {})
+    dev = attr.get("device", {})
+    if attr.get("summary", {}).get("signals") or attr.get("identities"):
+        print(_c("\n  ATTRIBUTION & DEVICE TRACES", "1"))
+        for i in attr.get("identities", []):
+            mark = " (verified)" if i.get("verified") else ""
+            print(f"    person   {i['name']}  — {i['role']}{mark}  [{i['source']}]")
+        for u in dev.get("usernames", []):
+            print(_c(f"    account  {u['value']}   [{u['source']}]", "33"))
+        for h in dev.get("machine_names", []):
+            print(_c(f"    machine  {h['value']}   [{h['source']}]", "33"))
+        for m in dev.get("mac_addresses", []):
+            r = " (randomised)" if m["randomized"] else ""
+            print(_c(f"    MAC      {m['value']}{r}   [{m['source']}]", "31"))
+        for t in dev.get("timezones", []):
+            reg = f" — {t['region']}" if t.get("region") else ""
+            print(f"    timezone {t['value']}{reg}   [{t['source']}]")
+        for c in dev.get("cameras", []):
+            print(f"    camera   {c['value']}   [{c['source']}]")
+        for g in attr.get("geolocation", {}).get("image_gps", []):
+            print(_c(f"    GPS      {g['lat']}, {g['lon']}   [{g['source']}]  {g['maps_url']}", "31"))
+        for p in dev.get("local_paths", [])[:6]:
+            print(f"    path     {p}")
+        for ip in attr.get("network", {}).get("ip_addresses", []):
+            print(f"    ip       {ip['value']}   ({ip['note']})")
+        print(_c("    note: a document does not store the author's IP address; names are unverified "
+                 "unless marked (verified).", "0"))
+
     if rep["errors"]:
         print(_c("\n  NOTES", "1"))
         for er in rep["errors"]:

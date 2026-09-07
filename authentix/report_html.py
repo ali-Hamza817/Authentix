@@ -18,6 +18,51 @@ def _e(x) -> str:
     return html.escape("" if x is None else str(x))
 
 
+def _attribution_html(attr: dict) -> str:
+    dev = attr.get("device", {}) or {}
+    geo = attr.get("geolocation", {}) or {}
+    net = attr.get("network", {}) or {}
+    rows = []
+
+    for i in attr.get("identities", []) or []:
+        v = " ✓ verified" if i.get("verified") else ""
+        rows.append(f"<tr><td>{_e(i['role'])}</td><td>{_e(i['name'])}{v}</td><td>{_e(i['source'])}</td></tr>")
+    for u in dev.get("usernames", []):
+        rows.append(f"<tr><td>user account</td><td class='hot'>{_e(u['value'])}</td><td>{_e(u['source'])}</td></tr>")
+    for h in dev.get("machine_names", []):
+        rows.append(f"<tr><td>computer / host</td><td class='hot'>{_e(h['value'])}</td><td>{_e(h['source'])}</td></tr>")
+    for m in dev.get("mac_addresses", []):
+        r = " (randomised)" if m.get("randomized") else ""
+        rows.append(f"<tr><td>MAC address</td><td class='hot'>{_e(m['value'])}{r}</td><td>{_e(m['source'])}</td></tr>")
+    for t in dev.get("timezones", []):
+        reg = f" — {_e(t['region'])}" if t.get("region") else ""
+        rows.append(f"<tr><td>timezone</td><td>{_e(t['value'])}{reg}</td><td>{_e(t['source'])}</td></tr>")
+    for c in dev.get("cameras", []):
+        rows.append(f"<tr><td>camera / phone</td><td>{_e(c['value'])}</td><td>{_e(c['source'])}</td></tr>")
+    for gpt in geo.get("image_gps", []):
+        rows.append(
+            f"<tr><td>photo GPS</td><td class='hot'>{gpt['lat']}, {gpt['lon']} "
+            f"(<a href='{_e(gpt['maps_url'])}'>map</a>)</td><td>{_e(gpt['source'])}</td></tr>"
+        )
+    for p in dev.get("printers", []):
+        rows.append(f"<tr><td>printer</td><td>{_e(p['value'])}</td><td>{_e(p['source'])}</td></tr>")
+    for ip in net.get("ip_addresses", []):
+        rows.append(f"<tr><td>IP in file</td><td>{_e(ip['value'])}</td><td>{_e(ip['note'])}</td></tr>")
+    for s in dev.get("software", []):
+        rows.append(f"<tr><td>software</td><td>{_e(s['value'])}</td><td>{_e(s['source'])}</td></tr>")
+    for p in dev.get("local_paths", [])[:10]:
+        rows.append(f"<tr><td>local path</td><td class='mono'>{_e(p)}</td><td>creating machine</td></tr>")
+
+    if not rows:
+        return "<p class='ok'>No identifying device traces were found in this file.</p>"
+    notes = "".join(f"<li>{_e(n)}</li>" for n in attr.get("notes", []))
+    return (
+        "<table><thead><tr><th>Trace</th><th>Value</th><th>Source</th></tr></thead>"
+        f"<tbody>{''.join(rows)}</tbody></table>"
+        f"<ul class='notes'>{notes}</ul>"
+    )
+
+
 def render_html(rep: dict) -> str:
     s = rep["summary"]
     band = s.get("band", "Unknown")
@@ -68,6 +113,9 @@ def render_html(rep: dict) -> str:
           </div>"""
     if not sig_html:
         sig_html = '<p class="ok">Document is not digitally signed.</p>'
+
+    attr = rep.get("attribution", {})
+    attr_html = _attribution_html(attr)
 
     comp = rep["ewdca"].get("components", {})
     comp_html = "".join(
@@ -125,6 +173,8 @@ def render_html(rep: dict) -> str:
   .cmp {{ display:inline-flex; gap:8px; align-items:baseline; background:var(--card); border:1px solid var(--rule);
           border-radius:6px; padding:6px 10px; margin:3px 6px 3px 0; font:0.78rem "IBM Plex Mono",monospace; }}
   .ok {{ color:#3B7A4E; }}
+  td.hot {{ color:#A23333; font-weight:600; }}
+  ul.notes {{ margin:12px 0 0; padding-left:18px; color:var(--soft); font-size:.78rem; line-height:1.5; }}
   details {{ margin-top:10px; }} summary {{ cursor:pointer; font:0.8rem "IBM Plex Mono",monospace; color:var(--accent); }}
   pre {{ background:#12333f; color:#dfeef4; padding:14px; border-radius:8px; overflow:auto; font-size:.72rem; line-height:1.5; }}
   .foot {{ margin-top:40px; color:var(--soft); font:0.72rem "IBM Plex Mono",monospace; }}
@@ -169,6 +219,9 @@ sha-256 {_e(rep['file']['sha256'])}<br>analysed {_e(rep['analyzed_at'])} · Auth
 
 <h2>Digital signatures</h2>
 {sig_html}
+
+<h2>Attribution &amp; device traces</h2>
+{attr_html}
 
 <h2>Consistency graph — {g['contradiction_count']} contradiction(s) / {g['edge_count']} checks · &rho; = {g['contradiction_density']}</h2>
 <table><thead><tr><th>Evidence pair</th><th>Expectation</th><th>Observed</th><th>Status</th><th>&kappa;</th></tr></thead>

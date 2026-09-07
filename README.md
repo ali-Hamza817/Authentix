@@ -8,7 +8,10 @@ evidence:
 - **who created it, and when** — author, creating application, creation timestamp
 - **what happened to it since** — modification dates, incremental revisions, re-saves, signing events
 - **what looks forged** — back-dated timestamps, tool/producer contradictions, content added after signing, metadata edited separately from content, active/malicious constructs
+- **attribution & device traces** — named people (a digital-signature subject is the only *verified* one), an embedded Windows **username** or **machine / UNC host**, a hardware **MAC address** recovered from a version-1 UUID, the creating machine's **timezone**, printer names, and **GPS + camera model** from EXIF inside embedded photos
 - a **credibility score (0–100)** with a band and a ranked, plain-language list of risk factors
+
+> A document does **not** contain the author's IP address — no PDF/Office field holds one. Attribution is whatever the creating software happened to leave behind, and names are self-reported unless verified by a signature.
 
 The score is not a malware verdict. It measures how far the document's *claimed*
 history agrees with the evidence it carries. A valid digital signature does **not**
@@ -126,6 +129,7 @@ authentix/
 │   └── ooxml.py         core.xml / app.xml, ZIP part timestamps, tracked changes, macros
 ├── decg.py              Document Evidence Consistency Graph
 ├── ewdca.py             Evidence-Weighted Document Credibility Assessment
+├── attribution.py       identities + device traces (username, host, MAC, timezone, EXIF GPS)
 ├── report.py            assemble the final report object
 ├── report_html.py       standalone HTML renderer (CLI --html)
 └── cli.py               command-line interface
@@ -151,6 +155,11 @@ tests/
 
 ## Limitations
 
+- **No IP address / geolocation of the author.** PDF and Office files do not
+  store the creator's IP. Attribution is limited to what the software left in
+  metadata, embedded file paths, UUIDs and embedded-photo EXIF — a username, a
+  machine name, a network-card MAC, a timezone or a photo's GPS tag, and only
+  when it happens to be present.
 - Signature analysis validates **structure and coverage** and reads the signer
   certificate; it does **not** perform full RFC 5280 chain / revocation
   validation. Use a dedicated validator (e.g. pyHanko) for legal reliance.

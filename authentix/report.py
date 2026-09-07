@@ -101,6 +101,7 @@ def build(intake, ev: dict, decg: dict, sc: dict) -> dict:
             "tampering_count": len(material),
             "findings_total": len(findings),
             "origin_known": origin_known,
+            "attribution_signals": (ev.get("attribution", {}).get("summary", {}) or {}).get("signals", 0),
         },
         "origin": {
             "author": d.get("author"),
@@ -116,6 +117,10 @@ def build(intake, ev: dict, decg: dict, sc: dict) -> dict:
         },
         "timeline": ev.get("timeline", []),
         "findings": findings,          # "what was forged / what changed", severity-sorted
+        "attribution": ev.get("attribution", {
+            "summary": {"people": [], "verified_people": [], "has_device_traces": False, "signals": 0},
+            "identities": [], "device": {}, "network": {}, "geolocation": {}, "notes": [],
+        }),
         "signatures": sigs,
         "consistency_graph": decg,
         "ewdca": sc,

@@ -17,6 +17,7 @@ import ScoreGauge from "./ScoreGauge";
 import Findings from "./Findings";
 import Timeline from "./Timeline";
 import Signatures from "./Signatures";
+import AttributionView from "./Attribution";
 import ConsistencyGraph from "./ConsistencyGraph";
 import EwdcaPanel from "./EwdcaPanel";
 import EvidenceAccordion from "./EvidenceAccordion";
@@ -159,6 +160,15 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
       <AnimatedContent delay={0.05}>
         <h2 className="section-title">Digital signatures</h2>
         <Signatures signatures={report.signatures} />
+      </AnimatedContent>
+
+      {/* attribution & device traces */}
+      <AnimatedContent delay={0.05}>
+        <h2 className="section-title">
+          Attribution &amp; device traces
+          {s.attribution_signals > 0 && <span className="section-count">{s.attribution_signals}</span>}
+        </h2>
+        <AttributionView attribution={report.attribution} />
       </AnimatedContent>
 
       {/* consistency graph */}

@@ -11,6 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), os.pardir))
 
 from authentix.analyzer import analyze_bytes  # noqa: E402
 from tests.make_samples import (  # noqa: E402
+    build_attribution_demo_docx,
     build_docx,
     build_pdf,
     build_pypdf_rewrite,
@@ -103,6 +104,26 @@ def test_pypdf_rewrite_with_metadata_stays_credible():
     assert "programmatic_rewrite" in _codes(rep)
     assert rep["summary"]["origin_known"] is True
     assert rep["summary"]["band"] in ("Credible", "Guarded")
+
+
+def test_attribution_traces_extracted():
+    rep = analyze_bytes(build_attribution_demo_docx(), "attr.docx")
+    a = rep["attribution"]
+    dev = a["device"]
+    assert any(u["value"] == "a.hamza" for u in dev["usernames"])
+    assert any(h["value"] == "FILES-DC01" for h in dev["machine_names"])
+    assert any(m["value"] == "00:a0:c9:1e:6b:f6" for m in dev["mac_addresses"])
+    assert any(t["value"] == "UTC+05:00" for t in dev["timezones"])
+    assert "Ali Hamza" in a["summary"]["people"]
+    codes = _codes(rep)
+    assert {"username_disclosed", "machine_name_disclosed", "mac_address_disclosed"} <= codes
+    assert rep["summary"]["attribution_signals"] >= 3
+
+
+def test_attribution_quiet_on_clean_pdf():
+    rep = analyze_bytes(build_pdf(), "clean.pdf")
+    assert rep["summary"]["attribution_signals"] == 0
+    assert not any(f["category"] == "privacy" for f in rep["findings"])
 
 
 def test_clean_docx_is_credible():

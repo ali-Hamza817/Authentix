@@ -554,6 +554,138 @@
   margin: 4px 0;
 }
 
+/* ---------- attribution & device traces ---------- */
+.section-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 10px;
+  border-radius: var(--r-pill);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.attr {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.attr__disclaimer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--brand-soft);
+  border: 1px solid color-mix(in srgb, var(--brand-bright) 22%, transparent);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.attr__disclaimer svg {
+  color: var(--brand-bright);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.attr__disclaimer b {
+  color: var(--ink);
+}
+.attr__people ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.attr__people li {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.attr__name {
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+.attr__role {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.attr__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ok);
+  background: var(--ok-soft);
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+}
+.attr__src {
+  margin-left: auto;
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--ink-3);
+}
+.attr__tblwrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.attr__tbl {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 520px;
+  background: var(--surface);
+}
+.attr__tbl th,
+.attr__tbl td {
+  text-align: left;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+  vertical-align: top;
+}
+.attr__tbl th {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--surface-2);
+}
+.attr__tbl tr:last-child td {
+  border-bottom: 0;
+}
+.attr__tbl tr.is-hot .attr__val {
+  color: var(--bad);
+  font-weight: 600;
+}
+.attr__val a {
+  color: var(--brand-bright);
+}
+.attr__rowsrc {
+  color: var(--ink-3);
+  font-size: 0.78rem;
+}
+.attr__emails {
+  font-size: 0.76rem;
+  color: var(--ink-3);
+  word-break: break-all;
+}
+
 /* ---------- evidence accordion ---------- */
 .ev {
   overflow: hidden;

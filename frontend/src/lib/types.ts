@@ -87,6 +87,43 @@ export interface Ewdca {
   risk_factors: { title: string; severity: SeverityLabel; category: string; detail: string }[];
 }
 
+export interface Attribution {
+  summary: {
+    people: string[];
+    verified_people: string[];
+    has_device_traces: boolean;
+    signals: number;
+  };
+  identities: {
+    name: string;
+    role: string;
+    source: string;
+    verified: boolean;
+    email: string | null;
+  }[];
+  device: {
+    usernames?: { value: string; source: string }[];
+    machine_names?: { value: string; source: string }[];
+    mac_addresses?: { value: string; randomized: boolean; source: string }[];
+    printers?: { value: string; source: string }[];
+    timezones?: { value: string; region: string | null; source: string }[];
+    software?: { value: string; source: string }[];
+    locales?: string[];
+    local_paths?: string[];
+    cameras?: { value: string; software?: string | null; artist?: string | null; source: string }[];
+  };
+  network: {
+    ip_addresses?: { value: string; source: string; note: string }[];
+    emails?: string[];
+    external_urls?: string[];
+  };
+  geolocation: {
+    image_gps?: { lat: number; lon: number; source: string; maps_url: string }[];
+    timezone_region?: string | null;
+  };
+  notes: string[];
+}
+
 export interface Report {
   product: string;
   version: string;
@@ -113,6 +150,7 @@ export interface Report {
     tampering_count: number;
     findings_total: number;
     origin_known: boolean;
+    attribution_signals: number;
   };
   origin: {
     author: string | null;
@@ -128,6 +166,7 @@ export interface Report {
   };
   timeline: TimelineEvent[];
   findings: Finding[];
+  attribution: Attribution;
   signatures: Signature[];
   consistency_graph: ConsistencyGraph;
   ewdca: Ewdca;
