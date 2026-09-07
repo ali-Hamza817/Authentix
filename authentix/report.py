@@ -90,6 +90,8 @@ def build(intake, ev: dict, decg: dict, sc: dict) -> dict:
         "summary": {
             "credibility_score": sc.get("credibility_score"),
             "band": band,
+            "confidence": sc.get("confidence", "n/a"),
+            "confidence_basis": sc.get("confidence_basis"),
             "verdict": _verdict(band, findings, origin_known),
             "title": d.get("title"),
             "created": created,
@@ -116,7 +118,8 @@ def build(intake, ev: dict, decg: dict, sc: dict) -> dict:
             "toolchain_inference": _toolchain_story(ev, d),
         },
         "timeline": ev.get("timeline", []),
-        "findings": findings,          # "what was forged / what changed", severity-sorted
+        "findings": findings,          # ranked by impact x reliability; each carries stance + reasoning
+        "evidence_matrix": ev.get("evidence_matrix", []),
         "attribution": ev.get("attribution", {
             "summary": {"people": [], "verified_people": [], "has_device_traces": False, "signals": 0},
             "identities": [], "device": {}, "network": {}, "geolocation": {}, "notes": [],

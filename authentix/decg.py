@@ -7,13 +7,22 @@ contradiction; the density of contradictions feeds the EWDCA score.
 """
 from __future__ import annotations
 
+from . import reliability as _rel
 from . import util
 
+# reliability of each side of an edge, by the kind of evidence it names
+_R_DECLARED = _rel.score("declared_metadata")       # ~0.25 — soft timestamps / free text
+_R_INTERNAL = _rel.score("internal_revision")        # ~0.80 — revision structure, ZIP part times
+_R_STRUCT = _rel.score("structural_binding")         # ~0.88 — /ID, XRef, byte offsets
+_R_FINGERPRINT = _rel.score("toolchain_fingerprint")  # ~0.66 — producer inference
+_R_CRYPTO = _rel.score("cryptographic")              # ~0.97 — signature / ByteRange
 
-def _edge(eid, a, b, relation, status, kappa, expected, observed):
+
+def _edge(eid, a, b, relation, status, kappa, expected, observed, reliability=0.4):
     return {
         "id": eid, "a": a, "b": b, "relation": relation,
         "status": status, "kappa": round(util.clamp(kappa), 3),
+        "reliability": round(util.clamp(reliability), 3),
         "expected": expected, "observed": observed,
     }
 
@@ -39,6 +48,7 @@ def build(ev: dict) -> dict:
             "contradiction" if bad else "consistent", 1.0 if bad else 0.0,
             "ModDate >= CreationDate",
             "ModDate < CreationDate" if bad else "ModDate >= CreationDate",
+            reliability=_R_DECLARED,  # two soft timestamps
         ))
 
     # --- universal: nothing dated in the future --- #
@@ -47,6 +57,7 @@ def build(ev: dict) -> dict:
             "not_future", "document dates", "time of analysis",
             "no timestamp lies in the future",
             "contradiction", 1.0, "all dates <= now", "a date is in the future",
+            reliability=0.55,  # which field is wrong is uncertain, but a future date can't be legitimate
         ))
 
     if ev.get("engine") == "pdf":
@@ -59,6 +70,21 @@ def build(ev: dict) -> dict:
     rho = (len(contradictions) + 0.5 * len(weak)) / len(edges) if edges else 0.0
     mean_kappa = sum(e["kappa"] for e in edges) / len(edges) if edges else 0.0
 
+    # --- reliability-weighted view (ERA): a contradiction between two weak
+    #     sources counts for less than one backed by cryptographic evidence.
+    def w(e):
+        return 0.30 + 0.70 * e["reliability"]
+
+    wsum = sum(w(e) for e in edges) or 1.0
+    weighted_kappa = sum(e["kappa"] * w(e) for e in edges) / wsum
+    weighted_density = (
+        sum(w(e) for e in contradictions) + 0.5 * sum(w(e) for e in weak)
+    ) / wsum
+    top = max(
+        ((e["kappa"] * e["reliability"], e) for e in contradictions),
+        default=(0.0, None),
+    )
+
     return {
         "nodes": _nodes(edges),
         "edges": edges,
@@ -67,6 +93,12 @@ def build(ev: dict) -> dict:
         "weak_count": len(weak),
         "contradiction_density": round(rho, 3),
         "mean_kappa": round(mean_kappa, 3),
+        "weighted_kappa": round(weighted_kappa, 3),
+        "weighted_density": round(weighted_density, 3),
+        "strongest_contradiction": (
+            {"edge": top[1]["id"], "reliability": top[1]["reliability"], "kappa": top[1]["kappa"]}
+            if top[1] else None
+        ),
     }
 
 
@@ -82,6 +114,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
                 "a later modification leaves a new revision",
                 "contradiction", 0.85,
                 "incremental update present", f"single revision, {round(gap)}d gap",
+                reliability=0.60,
             ))
         elif abs(gap) < 1 and updates > 0:
             edges.append(_edge(
@@ -89,6 +122,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
                 "appended revisions move the modification date",
                 "weak", 0.5,
                 "ModDate later than creation", f"{updates} update(s), ModDate unchanged",
+                reliability=0.45,
             ))
         else:
             edges.append(_edge(
@@ -96,6 +130,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
                 "modification date and revision count agree",
                 "consistent", 0.0, "consistent",
                 f"{updates} update(s), gap {round(gap, 1)}d",
+                reliability=0.60,
             ))
 
     # trailer /ID stability
@@ -108,6 +143,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
             "contradiction" if bad else "consistent", 1.0 if bad else 0.0,
             "ID[0] == ID[1] on a single revision",
             "ID pair differs" if tid.get("changed") else "ID pair matches",
+            reliability=_R_STRUCT,
         ))
 
     # toolchain: authoring app vs producer
@@ -127,6 +163,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
             "toolchain", "Creator / CreatorTool", "Producer",
             "producer is consistent with the authoring application",
             status, k, "same tool family or a recorded export step", obs,
+            reliability=_R_FINGERPRINT,
         ))
 
     # XMP vs DocInfo creation instant
@@ -138,6 +175,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
                 "the same creation instant in both metadata stores",
                 "contradiction" if dd > 3 else "weak", util.clamp(dd / 30.0),
                 "identical timestamps", f"{dd} days apart",
+                reliability=0.35,
             ))
 
     # signature coverage
@@ -156,6 +194,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
             f"Signature #{sg.get('index', 1)} /ByteRange", "file bytes",
             "the signature covers the whole visible document",
             status, k, "byte range spans the file", obs,
+            reliability=_R_CRYPTO,
         ))
         st_dt = util.parse_iso_date(sg.get("signing_time"))
         if st_dt and c:
@@ -167,6 +206,7 @@ def _pdf_edges(ev, edges, c, m, st, F):
                 "contradiction" if bad else "consistent", 1.0 if bad else 0.0,
                 "signing time >= CreationDate",
                 "signing time < CreationDate" if bad else "signing time >= CreationDate",
+                reliability=0.55,
             ))
 
 
@@ -178,6 +218,7 @@ def _ooxml_edges(ev, edges, st, F):
         "contradiction" if sep else "consistent", 0.8 if sep else 0.0,
         "written within seconds of each other",
         "properties written much later" if sep else "coherent",
+        reliability=0.78,
     ))
 
     rev_mm = _has(F, "revision_editing_time_mismatch")
@@ -186,6 +227,7 @@ def _ooxml_edges(ev, edges, st, F):
         "editing time is plausible for the revision count",
         "contradiction" if rev_mm else "consistent", 0.75 if rev_mm else 0.0,
         "proportionate", "disproportionate" if rev_mm else "proportionate",
+        reliability=0.45,
     ))
 
     span = _has(F, "inconsistent_part_timestamps")
@@ -194,6 +236,7 @@ def _ooxml_edges(ev, edges, st, F):
             "part_span", "earliest package part", "latest package part",
             "all parts of one save share a write time",
             "weak", 0.5, "parts written together", "parts span hours",
+            reliability=0.70,
         ))
 
 

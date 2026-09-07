@@ -95,27 +95,40 @@ document ─▶ intake ─▶ evidence extraction ─▶ normalization ─▶ DE
    tools that rewrite an existing PDF). A file last written by a manipulator,
    with its author and dates gone, is flagged `programmatic_rewrite` and its
    origin is reported as **not established** rather than a wall of "unknown".
-3. **DECG** (`authentix/decg.py`) — build the *Document Evidence Consistency
+3. **Evidence Reliability Assessment** (`authentix/reliability.py`) — every
+   observation is tiered by how much the *evidence itself* can be trusted:
+   cryptographic ≈ 0.97, structural ≈ 0.88, internal-revision ≈ 0.80, toolchain
+   fingerprint ≈ 0.66, declared metadata ≈ 0.25. Each finding gets a **stance**
+   — `SUPPORTED` / `CONTRADICTED` / `INSUFFICIENT` (absence of evidence is *not*
+   a pass) — a reliability, a **confidence** (impact × reliability), and an
+   evidence → reasoning → conclusion chain. Findings are ranked by confidence,
+   not raw severity. (Tier values are documented defaults, pending experimental
+   calibration.)
+4. **DECG** (`authentix/decg.py`) — build the *Document Evidence Consistency
    Graph*: nodes are evidence, edges are *forensic expectations* (e.g. "creation
    ≤ modification", "signature covers the whole file", "producer matches the
-   authoring app"). Each edge gets a contradiction score κ; the fraction of
-   contradicting edges is the density ρ.
-4. **EWDCA** (`authentix/ewdca.py`) — the score:
+   authoring app"). Each edge gets a contradiction score κ **and a reliability**;
+   the conflict term is reliability-weighted, so a contradiction between two weak
+   metadata fields counts for less than one anchored in a signature.
+5. **EWDCA** (`authentix/ewdca.py`) — the score:
 
    ```
    Risk = α·A + β·K + γ·(1−P) + δ·(1−S) + λ·ρ + μ·L
    Credibility = round( 100 · (1 − Risk) )
    ```
 
-   `A` structural anomaly · `K` contradiction magnitude · `P` provenance
-   confidence · `S` signature integrity (coverage, not just validity) · `ρ`
-   contradiction density · `L` finding-severity load. Weights are documented
-   defaults in the source; some findings (modification-before-creation, future
-   dates, post-signing edits) are *dispositive* and cap the score outright.
-5. **Report** (`authentix/report.py`) — a single JSON object with `summary`,
-   `origin`, `timeline`, `findings`, `signatures`, `consistency_graph`, `ewdca`
-   and a raw `evidence` appendix. `authentix/report_html.py` renders it as a
-   standalone HTML page.
+   `A` structural anomaly · `K` *reliability-weighted* contradiction magnitude ·
+   `P` provenance confidence · `S` signature integrity (coverage, not just
+   validity) · `ρ` *reliability-weighted* contradiction density · `L`
+   finding-severity load. It also emits an overall **verdict confidence**
+   (High / Medium / Low) from the strongest contradiction's impact × reliability.
+   Weights are documented defaults; some findings (modification-before-creation,
+   future dates, post-signing edits) are *dispositive* and cap the score outright.
+6. **Report** (`authentix/report.py`) — a single JSON object with `summary`
+   (score, band, **confidence**), `origin`, `timeline`, `findings` (each with
+   stance + reliability + reasoning), `evidence_matrix`, `attribution`,
+   `signatures`, `consistency_graph`, `ewdca` and a raw `evidence` appendix.
+   `authentix/report_html.py` renders it as a standalone HTML page.
 
 ---
 
@@ -127,7 +140,8 @@ authentix/
 ├── evidence/
 │   ├── pdf.py           DocInfo, XMP, structure, revisions, signatures, findings
 │   └── ooxml.py         core.xml / app.xml, ZIP part timestamps, tracked changes, macros
-├── decg.py              Document Evidence Consistency Graph
+├── reliability.py       Evidence Reliability Assessment — tiers, stance model, Evidence Matrix
+├── decg.py              Document Evidence Consistency Graph (reliability-weighted)
 ├── ewdca.py             Evidence-Weighted Document Credibility Assessment
 ├── attribution.py       identities + device traces (username, host, MAC, timezone, EXIF GPS)
 ├── report.py            assemble the final report object

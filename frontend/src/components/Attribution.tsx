@@ -1,7 +1,13 @@
 import { BadgeCheck, MapPin, ShieldQuestion } from "lucide-react";
 import type { Attribution } from "../lib/types";
 
-type Row = { label: string; value: React.ReactNode; source: string; hot?: boolean };
+type Row = { label: string; value: React.ReactNode; source: string; confidence?: string; hot?: boolean };
+
+const CONF_TONE: Record<string, string> = {
+  high: "var(--bad)",
+  medium: "var(--warn)",
+  low: "var(--ink-3)",
+};
 
 export default function AttributionView({ attribution }: { attribution: Attribution }) {
   const a = attribution;
@@ -10,13 +16,16 @@ export default function AttributionView({ attribution }: { attribution: Attribut
   const gps = a.geolocation?.image_gps || [];
 
   const rows: Row[] = [];
-  for (const u of dev.usernames || []) rows.push({ label: "User account", value: u.value, source: u.source, hot: true });
-  for (const h of dev.machine_names || []) rows.push({ label: "Computer / host", value: h.value, source: h.source, hot: true });
+  for (const u of dev.usernames || [])
+    rows.push({ label: "User account", value: u.value, source: u.source, confidence: u.confidence, hot: true });
+  for (const h of dev.machine_names || [])
+    rows.push({ label: "Computer / host", value: h.value, source: h.source, confidence: h.confidence, hot: true });
   for (const m of dev.mac_addresses || [])
     rows.push({
       label: "MAC address",
       value: `${m.value}${m.randomized ? " (randomised)" : ""}`,
       source: m.source,
+      confidence: m.confidence,
       hot: !m.randomized,
     });
   for (const g of gps)
@@ -28,14 +37,21 @@ export default function AttributionView({ attribution }: { attribution: Attribut
         </a>
       ),
       source: g.source,
+      confidence: g.confidence,
       hot: true,
     });
-  for (const c of dev.cameras || []) rows.push({ label: "Camera / phone", value: c.value, source: c.source });
+  for (const c of dev.cameras || [])
+    rows.push({ label: "Camera / phone", value: c.value, source: c.source, confidence: c.confidence });
   for (const t of dev.timezones || [])
-    rows.push({ label: "Timezone", value: t.region ? `${t.value} — ${t.region}` : t.value, source: t.source });
-  for (const p of dev.printers || []) rows.push({ label: "Printer", value: p.value, source: p.source });
+    rows.push({
+      label: "Timezone",
+      value: t.region ? `${t.value} — ${t.region}` : t.value,
+      source: t.source,
+      confidence: t.confidence,
+    });
+  for (const p of dev.printers || []) rows.push({ label: "Printer", value: p.value, source: p.source, confidence: p.confidence });
   for (const ip of net.ip_addresses || [])
-    rows.push({ label: "IP in file", value: ip.value, source: ip.note });
+    rows.push({ label: "IP in file", value: ip.value, source: ip.note, confidence: "low" });
   for (const s of dev.software || []) rows.push({ label: "Software", value: s.value, source: s.source });
   for (const l of dev.locales || []) rows.push({ label: "Locale", value: l, source: "document settings" });
   for (const p of (dev.local_paths || []).slice(0, 10))
@@ -62,11 +78,9 @@ export default function AttributionView({ attribution }: { attribution: Attribut
               <li key={idx} className={i.verified ? "is-verified" : ""}>
                 <span className="attr__name">{i.name}</span>
                 <span className="attr__role">{i.role}</span>
-                {i.verified && (
-                  <span className="attr__verified">
-                    <BadgeCheck size={12} /> verified
-                  </span>
-                )}
+                <span className={`attr__label ${i.verified ? "is-verified" : ""}`}>
+                  {i.verified && <BadgeCheck size={12} />} {i.label ?? (i.verified ? "verified" : "self-reported")}
+                </span>
                 <span className="attr__src">{i.source}</span>
               </li>
             ))}
@@ -81,7 +95,8 @@ export default function AttributionView({ attribution }: { attribution: Attribut
               <tr>
                 <th>Trace</th>
                 <th>Value</th>
-                <th>Source</th>
+                <th>Confidence</th>
+                <th>Source / interpretation</th>
               </tr>
             </thead>
             <tbody>
@@ -89,6 +104,16 @@ export default function AttributionView({ attribution }: { attribution: Attribut
                 <tr key={idx} className={r.hot ? "is-hot" : ""}>
                   <td>{r.label}</td>
                   <td className="attr__val">{r.value}</td>
+                  <td>
+                    {r.confidence && (
+                      <span
+                        className="attr__conf"
+                        style={{ color: CONF_TONE[r.confidence] ?? "var(--ink-3)" }}
+                      >
+                        {r.confidence}
+                      </span>
+                    )}
+                  </td>
                   <td className="attr__rowsrc">{r.source}</td>
                 </tr>
               ))}

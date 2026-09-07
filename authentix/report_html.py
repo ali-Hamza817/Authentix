@@ -12,6 +12,10 @@ _BAND_COLOR = {
     "Unknown": "#585B5E",
 }
 _SEV_COLOR = {"High": "#A23333", "Medium": "#BE5C2B", "Low": "#1F5C79", "Info": "#585B5E"}
+_STANCE_COLOR = {
+    "contradicted": "#A23333", "insufficient": "#A9772A",
+    "supported": "#3B7A4E", "neutral": "#585B5E",
+}
 
 
 def _e(x) -> str:
@@ -74,14 +78,35 @@ def render_html(rep: dict) -> str:
     cr, mo = s["created"], s["last_modified"]
     g = rep["consistency_graph"]
 
-    findings_html = "".join(
-        f"""<div class="finding">
-              <div class="fhead"><span class="sev" style="background:{_SEV_COLOR.get(f['severity_label'], '#585B5E')}">{_e(f['severity_label'])}</span>
-              <span class="ftitle">{_e(f['title'])}</span><span class="fcat">{_e(f['category'])}</span></div>
+    def _finding_block(f):
+        st = f.get("stance", "neutral")
+        rel = f.get("reliability")
+        meta = f"reliability {rel:.2f} · " if isinstance(rel, (int, float)) else ""
+        if f.get("confidence") and f["confidence"] != "n/a":
+            meta += f"confidence {_e(f['confidence'])} · "
+        reasoning = f.get("reasoning") or {}
+        return f"""<div class="finding">
+              <div class="fhead">
+                <span class="sev" style="background:{_STANCE_COLOR.get(st, '#585B5E')}">{_e(st)}</span>
+                <span class="ftitle">{_e(f['title'])}</span>
+                <span class="fcat">{_e(f['severity_label'])} · {_e(f['category'])}</span>
+              </div>
               <p>{_e(f['detail'])}</p>
+              <p class="freason">{meta}<b>evidence:</b> {_e(reasoning.get('evidence'))} &nbsp;—&nbsp;
+                 <b>conclusion:</b> {_e(reasoning.get('conclusion'))}</p>
             </div>"""
-        for f in rep["findings"]
-    ) or '<p class="ok">No inconsistencies detected.</p>'
+
+    findings_html = "".join(_finding_block(f) for f in rep["findings"]) or \
+        '<p class="ok">No inconsistencies detected.</p>'
+
+    matrix = rep.get("evidence_matrix", [])
+    matrix_html = ("".join(
+        f"<tr><td>{_e(r['label'])}</td>"
+        f"<td>{_e(r['value']) if r['present'] else '<i>not present</i>'}</td>"
+        f"<td class='num'>{r['reliability']:.2f} <small>{_e(r['reliability_label'])}</small></td>"
+        f"<td>{_e(r['source'])}</td></tr>"
+        for r in sorted(matrix, key=lambda x: -x['reliability'])
+    ) or "<tr><td colspan='4'>No structured evidence items.</td></tr>")
 
     timeline_html = "".join(
         f"""<li><span class="tw">{_e(e['when'] or '—')}</span>
@@ -157,6 +182,7 @@ def render_html(rep: dict) -> str:
   .ftitle {{ font-weight:600; }}
   .fcat {{ color:var(--soft); font:0.7rem "IBM Plex Mono",monospace; margin-left:auto; }}
   .finding p {{ margin:6px 0 0; font-size:.92rem; }}
+  .freason {{ font-size:.78rem!important; color:var(--soft); border-top:1px dashed var(--rule); padding-top:6px; }}
   ul.tl {{ list-style:none; padding:0; margin:0; }}
   ul.tl li {{ display:grid; grid-template-columns:190px 1fr; gap:4px 14px; padding:8px 0; border-bottom:1px solid var(--rule); }}
   ul.tl .tw {{ font:0.78rem "IBM Plex Mono",monospace; color:var(--soft); }}
@@ -211,7 +237,11 @@ sha-256 {_e(rep['file']['sha256'])}<br>analysed {_e(rep['analyzed_at'])} · Auth
 </div>
 <p class="muted" style="margin-top:10px">Toolchain inference: {_e(origin['toolchain_inference'])}</p>
 
-<h2>What changed / what looks forged</h2>
+<h2>Evidence &amp; reliability</h2>
+<table><thead><tr><th>Evidence</th><th>Value</th><th>Reliability</th><th>Source</th></tr></thead>
+<tbody>{matrix_html}</tbody></table>
+
+<h2>Findings — contradictions &amp; observations</h2>
 {findings_html}
 
 <h2>Timeline</h2>

@@ -53,7 +53,9 @@ def main(argv=None) -> int:
     print(f"  sha-256 {rep['file']['sha256']}")
     print(f"  {'-' * 66}")
     sc_txt = "n/a" if score is None else f"{score}/100"
-    print(_c(f"  Credibility {sc_txt}  —  {band}", colour + ";1"))
+    conf = s.get("confidence", "n/a")
+    conf_str = f"   ·   {conf} confidence" if conf and conf != "n/a" else ""
+    print(_c(f"  Credibility {sc_txt}  —  {band}{conf_str}", colour + ";1"))
     print(f"  {s['verdict']}\n")
     if args.quiet:
         return 0 if band in ("Credible", "Guarded") else 2
@@ -77,12 +79,26 @@ def main(argv=None) -> int:
         tag = {"consistent": "32", "weak": "33", "contradiction": "31"}.get(ed["status"], "0")
         print(_c(f"    [{mark}] {ed['a']} <-> {ed['b']}: {ed['observed']}", tag))
 
-    print(_c("\n  WHAT CHANGED / WHAT LOOKS FORGED", "1"))
+    em = rep.get("evidence_matrix", [])
+    if em:
+        print(_c("\n  EVIDENCE & RELIABILITY", "1"))
+        for r in sorted(em, key=lambda x: -x["reliability"])[:12]:
+            val = r["value"] if r["present"] else "(not present)"
+            print(f"    {r['reliability']:.2f} {r['reliability_label']:<11} {r['label']:<34} {str(val)[:40]}")
+
+    print(_c("\n  FINDINGS — CONTRADICTIONS & OBSERVATIONS", "1"))
     if rep["findings"]:
+        stance_tag = {"contradicted": "31", "insufficient": "33", "supported": "32", "neutral": "0"}
         for f in rep["findings"]:
-            tag = {"High": "31", "Medium": "33", "Low": "36", "Info": "0"}.get(f["severity_label"], "0")
-            print(_c(f"    [{f['severity_label']:>6}] {f['title']}", tag))
+            tag = stance_tag.get(f.get("stance", "neutral"), "0")
+            rel = f.get("reliability")
+            relstr = f"rel {rel:.2f}" if isinstance(rel, (int, float)) else "rel n/a"
+            conf = f"· {f['confidence']} conf" if f.get("confidence") and f["confidence"] != "n/a" else ""
+            print(_c(f"    [{str(f.get('stance','?')):>12} · {f['severity_label']:>6}] {f['title']}  ({relstr} {conf})", tag))
             print(f"             {f['detail']}")
+            rs = f.get("reasoning") or {}
+            if rs.get("conclusion"):
+                print(_c(f"             → {rs['conclusion']}", "0"))
     else:
         print("    No inconsistencies detected.")
 

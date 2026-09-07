@@ -12,6 +12,7 @@ from . import attribution as _attribution
 from . import decg as _decg
 from . import ewdca as _ewdca
 from . import intake as _intake
+from . import reliability as _reliability
 from . import report as _report
 from .evidence import ooxml as _ooxml
 from .evidence import pdf as _pdf
@@ -51,6 +52,16 @@ def analyze_bytes(data: bytes, filename: str = "document") -> dict:
             "identities": [], "device": {}, "network": {}, "geolocation": {}, "notes": [],
         }
         ev["errors"].append(_err("attribution", e))
+
+    # ---- Evidence Reliability Assessment: stamp stance / reliability / confidence
+    for _f in ev.get("findings", []):
+        _reliability.enrich_finding(_f)
+    ev["findings"].sort(key=lambda x: (-x.get("confidence_score", 0.0), -x["severity"]))
+    try:
+        ev["evidence_matrix"] = _reliability.build_matrix(ev)
+    except Exception as e:  # pragma: no cover - defensive
+        ev["evidence_matrix"] = []
+        ev["errors"].append(_err("evidence-matrix", e))
 
     try:
         graph = _decg.build(ev)

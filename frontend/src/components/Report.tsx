@@ -18,6 +18,7 @@ import Findings from "./Findings";
 import Timeline from "./Timeline";
 import Signatures from "./Signatures";
 import AttributionView from "./Attribution";
+import EvidenceMatrix from "./EvidenceMatrix";
 import ConsistencyGraph from "./ConsistencyGraph";
 import EwdcaPanel from "./EwdcaPanel";
 import EvidenceAccordion from "./EvidenceAccordion";
@@ -86,7 +87,14 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
           <ScoreGauge score={s.credibility_score} band={s.band} cappedAt={report.ewdca.score_capped_at} />
 
           <div className="rep__verdict">
-            <p className="eyebrow">Verdict</p>
+            <p className="eyebrow">
+              Verdict
+              {s.confidence !== "n/a" && (
+                <span className="rep__conf" title={s.confidence_basis ?? undefined}>
+                  {s.confidence} confidence
+                </span>
+              )}
+            </p>
             <p className="rep__verdictText">{s.verdict}</p>
             <div className="rep__chips">
               <span className="chip">
@@ -144,9 +152,15 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
         </p>
       </SpotlightCard>
 
+      {/* evidence matrix */}
+      <AnimatedContent>
+        <h2 className="section-title">Evidence &amp; reliability</h2>
+        <EvidenceMatrix rows={report.evidence_matrix} />
+      </AnimatedContent>
+
       {/* findings */}
       <AnimatedContent>
-        <h2 className="section-title">What changed / what looks forged</h2>
+        <h2 className="section-title">Findings — contradictions &amp; observations</h2>
         <Findings findings={report.findings} />
       </AnimatedContent>
 

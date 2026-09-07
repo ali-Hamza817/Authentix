@@ -9,6 +9,8 @@ export interface WhoWhen {
   tool: string | null;
 }
 
+export type Stance = "contradicted" | "insufficient" | "supported" | "neutral";
+
 export interface Finding {
   code: string;
   severity: 1 | 2 | 3 | 4;
@@ -17,6 +19,22 @@ export interface Finding {
   title: string;
   detail: string;
   evidence: Record<string, unknown>;
+  stance: Stance;
+  reliability: number | null;
+  confidence: "High" | "Medium" | "Low" | "n/a";
+  confidence_score: number;
+  reasoning: { evidence: string; reasoning: string; conclusion: string };
+}
+
+export interface EvidenceRow {
+  id: string;
+  label: string;
+  value: string | null;
+  present: boolean;
+  tier: string;
+  reliability: number;
+  reliability_label: string;
+  source: string;
 }
 
 export interface TimelineEvent {
@@ -77,6 +95,8 @@ export interface ConsistencyGraph {
 export interface Ewdca {
   credibility_score: number | null;
   band: Band;
+  confidence: "High" | "Medium" | "Low" | "n/a";
+  confidence_basis: string | null;
   risk: number | null;
   score_capped_at: number | null;
   cap_reason: string | null;
@@ -99,18 +119,19 @@ export interface Attribution {
     role: string;
     source: string;
     verified: boolean;
+    label: string;
     email: string | null;
   }[];
   device: {
-    usernames?: { value: string; source: string }[];
-    machine_names?: { value: string; source: string }[];
-    mac_addresses?: { value: string; randomized: boolean; source: string }[];
-    printers?: { value: string; source: string }[];
-    timezones?: { value: string; region: string | null; source: string }[];
+    usernames?: { value: string; source: string; confidence?: string; interpretation?: string }[];
+    machine_names?: { value: string; source: string; confidence?: string; interpretation?: string }[];
+    mac_addresses?: { value: string; randomized: boolean; source: string; confidence?: string; interpretation?: string }[];
+    printers?: { value: string; source: string; confidence?: string }[];
+    timezones?: { value: string; region: string | null; source: string; confidence?: string; interpretation?: string }[];
     software?: { value: string; source: string }[];
     locales?: string[];
     local_paths?: string[];
-    cameras?: { value: string; software?: string | null; artist?: string | null; source: string }[];
+    cameras?: { value: string; source: string; confidence?: string; interpretation?: string }[];
   };
   network: {
     ip_addresses?: { value: string; source: string; note: string }[];
@@ -118,7 +139,7 @@ export interface Attribution {
     external_urls?: string[];
   };
   geolocation: {
-    image_gps?: { lat: number; lon: number; source: string; maps_url: string }[];
+    image_gps?: { lat: number; lon: number; source: string; maps_url: string; confidence?: string; interpretation?: string }[];
     timezone_region?: string | null;
   };
   notes: string[];
@@ -143,6 +164,8 @@ export interface Report {
     title: string | null;
     created: WhoWhen;
     last_modified: WhoWhen;
+    confidence: "High" | "Medium" | "Low" | "n/a";
+    confidence_basis: string | null;
     revisions: number;
     signed: boolean;
     signature_status: string;
@@ -166,6 +189,7 @@ export interface Report {
   };
   timeline: TimelineEvent[];
   findings: Finding[];
+  evidence_matrix: EvidenceRow[];
   attribution: Attribution;
   signatures: Signature[];
   consistency_graph: ConsistencyGraph;

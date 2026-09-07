@@ -56,6 +56,43 @@ export const SEV_META: Record<SeverityLabel, { color: string; soft: string }> = 
   Info: { color: "var(--ink-3)", soft: "var(--surface-2)" },
 };
 
+export const STANCE_META: Record<
+  string,
+  { label: string; color: string; soft: string; blurb: string }
+> = {
+  contradicted: {
+    label: "Contradicted",
+    color: "var(--bad)",
+    soft: "var(--bad-soft)",
+    blurb: "evidence is inconsistent with the claimed origin/history",
+  },
+  insufficient: {
+    label: "Insufficient",
+    color: "var(--guard)",
+    soft: "var(--guard-soft)",
+    blurb: "corroborating evidence is absent — not a sign of authenticity",
+  },
+  supported: {
+    label: "Supported",
+    color: "var(--authentic)",
+    soft: "var(--ok-soft)",
+    blurb: "evidence is consistent with the claim",
+  },
+  neutral: {
+    label: "Observation",
+    color: "var(--ink-3)",
+    soft: "var(--surface-2)",
+    blurb: "recorded for context; not an authenticity signal",
+  },
+};
+
+export function reliabilityTone(r: number | null): string {
+  if (r == null) return "var(--ink-3)";
+  if (r >= 0.75) return "var(--authentic)";
+  if (r >= 0.5) return "var(--guard)";
+  return "var(--warn)";
+}
+
 /** Score bands on the 0-100 meter: [start, end, color] */
 export const METER_ZONES: [number, number, string][] = [
   [0, 25, "var(--bad)"],

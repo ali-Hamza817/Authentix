@@ -242,7 +242,10 @@ def extract(data: bytes, ev: dict, fmt: str) -> dict:
         if key in seen_id:
             return
         seen_id.add(key)
-        identities.append({"name": name, "role": role, "source": source, "verified": verified, "email": email})
+        identities.append({
+            "name": name, "role": role, "source": source, "verified": verified, "email": email,
+            "label": "verified" if verified else "self-reported",
+        })
 
     add_id(d.get("author"), "author", "document metadata")
     add_id(d.get("last_modified_by"), "last editor", "document metadata")
@@ -355,20 +358,39 @@ def extract(data: bytes, ev: dict, fmt: str) -> dict:
                                 "source": name})
         if "lat" in ex:
             image_gps.append({
-                "lat": ex["lat"], "lon": ex["lon"], "source": name,
+                "lat": ex["lat"], "lon": ex["lon"], "source": name, "confidence": "medium",
+                "interpretation": "where an embedded photo was taken — not necessarily where the document was made",
                 "maps_url": f"https://www.openstreetmap.org/?mlat={ex['lat']}&mlon={ex['lon']}#map=15/{ex['lat']}/{ex['lon']}",
             })
 
     device = {
-        "usernames": [{"value": k, "source": v} for k, v in usernames.items()],
-        "machine_names": [{"value": k, "source": v} for k, v in machines.items()],
-        "mac_addresses": list(macs.values()),
-        "printers": [{"value": k, "source": v} for k, v in printers.items()],
-        "timezones": [{"value": k, "region": _TZ_REGION.get(k), "source": v} for k, v in sorted(tz_hits.items())],
+        "usernames": [
+            {"value": k, "source": v, "confidence": "medium",
+             "interpretation": "an account on a machine that touched the file — may be an editor, not the author"}
+            for k, v in usernames.items()
+        ],
+        "machine_names": [
+            {"value": k, "source": v, "confidence": "medium",
+             "interpretation": "a host referenced by the file — could be a file server, not the author's PC"}
+            for k, v in machines.items()
+        ],
+        "mac_addresses": [
+            {**m, "confidence": "low" if m["randomized"] else "medium",
+             "interpretation": "possible originating-device network-card artefact; may be a VM/spoofed/shared NIC"}
+            for m in macs.values()
+        ],
+        "printers": [{"value": k, "source": v, "confidence": "medium"} for k, v in printers.items()],
+        "timezones": [
+            {"value": k, "region": _TZ_REGION.get(k), "source": v, "confidence": "low",
+             "interpretation": "region hint from the creating machine's clock offset — not an identity"}
+            for k, v in sorted(tz_hits.items())
+        ],
         "software": software,
         "locales": locales,
         "local_paths": sorted(local_paths)[:25],
-        "cameras": cameras,
+        "cameras": [{**c, "confidence": "medium",
+                     "interpretation": "the device that took an embedded photo — not necessarily the document's"}
+                    for c in cameras],
     }
     network = {"ip_addresses": ips, "emails": emails, "external_urls": ext_urls}
     geolocation = {

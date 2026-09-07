@@ -37,6 +37,116 @@
   color: var(--ink);
   letter-spacing: -0.01em;
 }
+.rep__conf {
+  margin-left: 10px;
+  padding: 3px 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: help;
+}
+
+/* ---------- evidence matrix ---------- */
+.ematrix {
+  overflow: hidden;
+}
+.ematrix__scroll {
+  overflow-x: auto;
+}
+.ematrix__tbl {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+  background: var(--surface);
+}
+.ematrix__tbl th,
+.ematrix__tbl td {
+  text-align: left;
+  padding: 10px 13px;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.84rem;
+  vertical-align: middle;
+}
+.ematrix__tbl th {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  background: var(--surface-2);
+}
+.ematrix__tbl tr.is-absent td {
+  color: var(--ink-3);
+  font-style: italic;
+}
+.ematrix__val {
+  word-break: break-word;
+}
+.ematrix__rel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ematrix__bar {
+  width: 78px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-inset);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.ematrix__bar span {
+  display: block;
+  height: 100%;
+}
+.ematrix__relnum {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+.ematrix__tier {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+}
+.ematrix__src {
+  color: var(--ink-3);
+  font-size: 0.78rem;
+}
+.ematrix__note {
+  padding: 12px 14px;
+  margin: 0;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: 0.76rem;
+  line-height: 1.55;
+  color: var(--ink-3);
+}
+
+/* ---------- attribution label / confidence ---------- */
+.attr__label {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.attr__label.is-verified {
+  color: var(--ok);
+}
+.attr__conf {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 .rep__chips {
   display: flex;
   flex-wrap: wrap;
@@ -259,13 +369,19 @@
   flex-wrap: wrap;
   gap: 10px;
 }
-.finding__sev {
-  font-size: 0.64rem;
+.finding__stance {
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 4px 8px;
   border-radius: var(--r-xs);
+}
+.finding__sev {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .finding__title {
   font-size: 1rem;
@@ -273,17 +389,64 @@
   flex: 1;
   min-width: 200px;
 }
-.finding__cat {
-  font-size: 0.7rem;
-  color: var(--ink-3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
 .finding__detail {
   margin-top: 8px;
   font-size: 0.9rem;
   color: var(--ink-2);
   line-height: 1.55;
+}
+.finding__toggle {
+  margin-top: 10px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 0.72rem/1 "IBM Plex Mono", ui-monospace, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--brand-bright);
+}
+.finding__chev {
+  transition: transform 0.18s var(--ease-out);
+}
+.finding__chev.is-open {
+  transform: rotate(90deg);
+}
+.finding__meta {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--ink-3);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.finding__chain {
+  margin: 12px 0 2px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  display: grid;
+  gap: 8px;
+}
+.finding__chain > div {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 10px;
+}
+.finding__chain dt {
+  font: 600 0.64rem/1.5 "IBM Plex Mono", monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.finding__chain dd {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-2);
+  line-height: 1.5;
 }
 
 /* ---------- timeline ---------- */

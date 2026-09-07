@@ -168,11 +168,52 @@ def test_unsupported_format_does_not_crash():
 def test_report_shape():
     rep = analyze_bytes(build_pdf(), "shape.pdf")
     for key in ("product", "file", "summary", "origin", "timeline", "findings",
-                "signatures", "consistency_graph", "ewdca", "evidence"):
+                "evidence_matrix", "signatures", "consistency_graph", "ewdca", "evidence"):
         assert key in rep, f"missing top-level key: {key}"
     assert rep["product"] == "Authentix"
     import json
     json.dumps(rep)  # must be JSON-serialisable
+
+
+def test_era_stance_and_reliability():
+    # stripped rewrite -> INSUFFICIENT, not a contradiction
+    rep = analyze_bytes(build_pypdf_rewrite(keep_metadata=False), "r.pdf")
+    pr = next(f for f in rep["findings"] if f["code"] == "programmatic_rewrite")
+    assert pr["stance"] == "insufficient"
+    assert pr["confidence"] == "n/a"
+    assert "reasoning" in pr and pr["reasoning"]["conclusion"]
+
+    # post-signature edit -> CONTRADICTED, high reliability (cryptographic)
+    rep2 = analyze_bytes(build_signed_then_modified(), "s.pdf")
+    mas = next(f for f in rep2["findings"] if f["code"] == "modified_after_signing")
+    assert mas["stance"] == "contradicted"
+    assert mas["reliability"] >= 0.9
+    assert mas["confidence"] == "High"
+    assert rep2["summary"]["confidence"] == "High"
+
+
+def test_era_evidence_matrix_tiers():
+    rep = analyze_bytes(build_pdf(), "m.pdf")
+    mx = {r["id"]: r for r in rep["evidence_matrix"]}
+    assert mx["creation_date"]["reliability_label"] == "declared"
+    assert mx["revisions"]["reliability"] > mx["creation_date"]["reliability"]
+
+
+def test_era_reliability_weighted_conflict():
+    # future-date contradiction rests on a low-reliability field -> discounted vs raw kappa
+    rep = analyze_bytes(build_pdf(creation="D:20990101000000Z", mod="D:20990101000000Z"), "f.pdf")
+    g = rep["consistency_graph"]
+    assert "weighted_kappa" in g and "weighted_density" in g
+    assert g["weighted_density"] <= g["contradiction_density"] + 1e-6
+
+
+def test_attribution_confidence_labels():
+    rep = analyze_bytes(build_attribution_demo_docx(), "a.docx")
+    ids = {i["name"]: i for i in rep["attribution"]["identities"]}
+    assert ids["Ali Hamza"]["label"] == "self-reported"
+    macs = rep["attribution"]["device"]["mac_addresses"]
+    assert macs and macs[0]["confidence"] in ("low", "medium")
+    assert "interpretation" in macs[0]
 
 
 # --------------------------------------------------------------------------- #

@@ -71,11 +71,18 @@ def _anomaly(ev: dict) -> float:
 
 
 def _contradiction_term(decg: dict) -> float:
+    """Reliability-weighted contradiction magnitude K.
+
+    A contradiction between two low-reliability sources moves the score less than
+    one anchored in cryptographic or structural evidence.
+    """
     edges = decg.get("edges", []) or []
-    hot = [e["kappa"] for e in edges if e["status"] in ("contradiction", "weak")]
+    hot = [e for e in edges if e["status"] in ("contradiction", "weak")]
     if not hot:
         return 0.0
-    return util.clamp(0.55 * max(hot) + 0.45 * (sum(hot) / len(hot)))
+    weighted = [e["kappa"] * (0.30 + 0.70 * e.get("reliability", 0.4)) for e in hot]
+    peak = max(e["kappa"] * e.get("reliability", 0.4) for e in hot)
+    return util.clamp(0.55 * max(weighted) + 0.30 * (sum(weighted) / len(weighted)) + 0.35 * peak)
 
 
 def _finding_load(ev: dict) -> float:
@@ -86,6 +93,8 @@ def _unknown(ev: dict) -> dict:
     return {
         "credibility_score": None,
         "band": "Unknown",
+        "confidence": "n/a",
+        "confidence_basis": "file could not be analysed",
         "risk": None,
         "score_capped_at": None,
         "cap_reason": None,
@@ -104,7 +113,7 @@ def score(ev: dict, decg: dict) -> dict:
     A = _anomaly(ev)
     K = _contradiction_term(decg)
     P = util.clamp(float(ev.get("provenance_confidence", 1.0) or 1.0))
-    rho = util.clamp(float(decg.get("contradiction_density", 0.0) or 0.0))
+    rho = util.clamp(float(decg.get("weighted_density", decg.get("contradiction_density", 0.0)) or 0.0))
     L = _finding_load(ev)
 
     si = ev.get("signature_integrity", None)
@@ -144,11 +153,13 @@ def score(ev: dict, decg: dict) -> dict:
     band = _band(cred)
 
     risk_factors = []
-    for f in sorted(ev.get("findings", []), key=lambda x: -x["severity"]):
-        if f["severity"] >= 2:
+    for f in sorted(ev.get("findings", []), key=lambda x: -x.get("confidence_score", 0.0)):
+        if f["severity"] >= 2 and f.get("stance") != "neutral":
             risk_factors.append({
                 "title": f["title"],
                 "severity": f["severity_label"],
+                "stance": f.get("stance"),
+                "confidence": f.get("confidence"),
                 "category": f["category"],
                 "detail": f["detail"],
             })
@@ -171,9 +182,25 @@ def score(ev: dict, decg: dict) -> dict:
     if not drivers:
         drivers.append("no material inconsistencies")
 
+    # ---- how confident are we in this verdict? (impact x reliability) ----- #
+    contradicted = [f for f in ev.get("findings", []) if f.get("stance") == "contradicted"]
+    insufficient = [f for f in ev.get("findings", []) if f.get("stance") == "insufficient"]
+    if contradicted:
+        peak = max(f.get("confidence_score", 0.0) for f in contradicted)
+        verdict_conf = "High" if peak >= 0.5 else ("Medium" if peak >= 0.22 else "Low")
+        conf_basis = "backed by " + max(contradicted, key=lambda f: f.get("confidence_score", 0.0))["reasoning"]["evidence"]
+    elif band in ("Credible", "Guarded") and not insufficient:
+        verdict_conf = "Medium" if band == "Guarded" else "High"
+        conf_basis = "no contradictions across the reliable evidence"
+    else:
+        verdict_conf = "Low"
+        conf_basis = "key corroborating evidence is absent"
+
     return {
         "credibility_score": cred,
         "band": band,
+        "confidence": verdict_conf,
+        "confidence_basis": conf_basis,
         "risk": round(risk, 3),
         "score_capped_at": capped,
         "cap_reason": cap_reason if capped is not None else None,
