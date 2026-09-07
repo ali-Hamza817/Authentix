@@ -1,37 +1,38 @@
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
-  RotateCcw,
-  Download,
-  UserRound,
-  Clock3,
-  Wrench,
-  Layers,
-  PenLine,
-  ShieldAlert,
-  ShieldCheck,
-  Info,
+  RotateCcw, Download, UserRound, Clock3, Wrench, PenLine, Info, Copy, Check,
 } from "lucide-react";
 import type { Report } from "../lib/types";
 import { fmtBytes, fmtDateTime } from "../lib/format";
 import ScoreGauge from "./ScoreGauge";
+import StatusTiles from "./StatusTiles";
 import Findings from "./Findings";
-import Timeline from "./Timeline";
+import TimelineVisual from "./TimelineVisual";
 import Signatures from "./Signatures";
-import AttributionView from "./Attribution";
-import EvidenceMatrix from "./EvidenceMatrix";
-import ConsistencyGraph from "./ConsistencyGraph";
+import DecgDiagram from "./DecgDiagram";
 import EwdcaPanel from "./EwdcaPanel";
+import EvidenceMatrix from "./EvidenceMatrix";
+import AttributionView from "./Attribution";
 import EvidenceAccordion from "./EvidenceAccordion";
 import GradientButton from "./reactbits/GradientButton";
 import SpotlightCard from "./reactbits/SpotlightCard";
-import AnimatedContent from "./reactbits/AnimatedContent";
 import "./Report.css";
 
+const TOOL_BADGE: Record<string, string> = { manipulator: "library", generator: "generated" };
+
+const SECTIONS = [
+  ["evidence", "Evidence"],
+  ["findings", "Findings"],
+  ["timeline", "Timeline"],
+  ["signatures", "Signatures"],
+  ["graph", "Graph"],
+  ["attribution", "Attribution"],
+  ["model", "Model"],
+] as const;
+
 function Fact({
-  icon,
-  label,
-  value,
-  badge,
+  icon, label, value, badge,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -53,14 +54,24 @@ function Fact({
   );
 }
 
-const TOOL_BADGE: Record<string, string> = {
-  manipulator: "library",
-  generator: "generated",
-};
-
 export default function ReportView({ report, onReset }: { report: Report; onReset: () => void }) {
   const s = report.summary;
   const g = report.consistency_graph;
+  const [copied, setCopied] = useState(false);
+  const [active, setActive] = useState<string>("evidence");
+  const secRefs = useRef<Record<string, HTMLElement | null>>({});
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (vis[0]) setActive(vis[0].target.id);
+      },
+      { rootMargin: "-45% 0px -50% 0px", threshold: [0, 0.5, 1] }
+    );
+    Object.values(secRefs.current).forEach((el) => el && obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
 
   function download() {
     const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
@@ -70,6 +81,22 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
     a.click();
     URL.revokeObjectURL(a.href);
   }
+  function copyHash() {
+    navigator.clipboard?.writeText(report.file.sha256).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  const Section = ({ id, title, count, children }: { id: string; title: string; count?: number; children: React.ReactNode }) => (
+    <section id={id} ref={(el) => (secRefs.current[id] = el)} className="sec">
+      <h2 className="section-title">
+        {title}
+        {count != null && count > 0 && <span className="section-count">{count}</span>}
+      </h2>
+      {children}
+    </section>
+  );
 
   return (
     <div className="rep">
@@ -78,10 +105,12 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
         <b>{report.file.name}</b>
         <span>{report.file.format_detail}</span>
         <span>{fmtBytes(report.file.size_bytes)}</span>
-        <span className="rep__hash">sha-256 {report.file.sha256}</span>
+        <button className="rep__hash" onClick={copyHash} title="Copy SHA-256">
+          {copied ? <Check size={11} /> : <Copy size={11} />} sha-256 {report.file.sha256.slice(0, 16)}…
+        </button>
       </div>
 
-      {/* hero */}
+      {/* ---------------- hero: verdict at a glance ---------------- */}
       <SpotlightCard className="rep__hero card" as="section">
         <div className="rep__heroGrid">
           <ScoreGauge score={s.credibility_score} band={s.band} cappedAt={report.ewdca.score_capped_at} />
@@ -96,121 +125,85 @@ export default function ReportView({ report, onReset }: { report: Report; onRese
               )}
             </p>
             <p className="rep__verdictText">{s.verdict}</p>
-            <div className="rep__chips">
-              <span className="chip">
-                <Layers size={13} /> {s.revisions} revision{s.revisions === 1 ? "" : "s"}
-              </span>
-              <span className="chip">
-                {s.signed ? <ShieldCheck size={13} /> : <ShieldAlert size={13} />} {s.signature_status}
-              </span>
-              <span className={`chip ${s.tampering_detected ? "chip--bad" : "chip--ok"}`}>
-                {s.tampering_detected
-                  ? `${s.tampering_count} material finding${s.tampering_count === 1 ? "" : "s"}`
-                  : "no tampering detected"}
-              </span>
+
+            <div className="rep__facts">
+              <Fact icon={<Clock3 size={15} />} label="Created" value={s.created.when ? fmtDateTime(s.created.when) : null} />
+              <Fact icon={<UserRound size={15} />} label="By" value={s.created.by} />
+              <Fact
+                icon={<Wrench size={15} />}
+                label="Tool"
+                value={s.created.tool}
+                badge={report.origin.tool_kind ? TOOL_BADGE[report.origin.tool_kind] : undefined}
+              />
+              <Fact icon={<PenLine size={15} />} label="Last modified" value={s.last_modified.when ? fmtDateTime(s.last_modified.when) : null} />
             </div>
           </div>
         </div>
 
         {!s.origin_known && (
           <div className="rep__originNote">
-            <Info size={16} />
+            <Info size={15} />
             <span>
-              <b>Origin not established.</b> This file carries no author and no creation date — either they were
-              never written, or a later processing step removed them. The tools below are the last software to
-              write the file, not necessarily who authored it. See the findings.
+              <b>Origin not established.</b> No author and no creation date — the tools shown are the last software to
+              write the file, not who authored it.
             </span>
           </div>
         )}
 
-        <div className="rep__facts">
-          <Fact icon={<Clock3 size={16} />} label="Created" value={s.created.when ? fmtDateTime(s.created.when) : null} />
-          <Fact icon={<UserRound size={16} />} label="Created by" value={s.created.by} />
-          <Fact
-            icon={<Wrench size={16} />}
-            label="Creating tool"
-            value={s.created.tool}
-            badge={report.origin.tool_kind ? TOOL_BADGE[report.origin.tool_kind] : undefined}
-          />
-          <Fact
-            icon={<PenLine size={16} />}
-            label="Last modified"
-            value={s.last_modified.when ? fmtDateTime(s.last_modified.when) : null}
-          />
-          <Fact icon={<UserRound size={16} />} label="Last modified by" value={s.last_modified.by} />
-          <Fact
-            icon={<Wrench size={16} />}
-            label="Modifying tool"
-            value={s.last_modified.tool}
-            badge={report.origin.tool_kind ? TOOL_BADGE[report.origin.tool_kind] : undefined}
-          />
-        </div>
-
         <p className="rep__toolchain">
-          <span className="eyebrow">Toolchain inference</span>
+          <span className="eyebrow">Toolchain</span>
           {report.origin.toolchain_inference}
         </p>
       </SpotlightCard>
 
-      {/* evidence matrix */}
-      <AnimatedContent>
-        <h2 className="section-title">Evidence &amp; reliability</h2>
+      {/* ---------------- at-a-glance status tiles ---------------- */}
+      <StatusTiles report={report} />
+
+      {/* ---------------- sticky section nav ---------------- */}
+      <nav className="rep__nav">
+        {SECTIONS.map(([id, label]) => (
+          <a key={id} href={`#${id}`} className={active === id ? "is-active" : ""}>
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <Section id="evidence" title="Evidence & reliability">
         <EvidenceMatrix rows={report.evidence_matrix} />
-      </AnimatedContent>
+      </Section>
 
-      {/* findings */}
-      <AnimatedContent>
-        <h2 className="section-title">Findings — contradictions &amp; observations</h2>
+      <Section id="findings" title="Findings" count={report.findings.length}>
         <Findings findings={report.findings} />
-      </AnimatedContent>
+      </Section>
 
-      {/* timeline */}
-      <AnimatedContent delay={0.05}>
-        <h2 className="section-title">Timeline</h2>
-        <Timeline events={report.timeline} />
-      </AnimatedContent>
+      <Section id="timeline" title="Timeline">
+        <TimelineVisual events={report.timeline} />
+      </Section>
 
-      {/* signatures */}
-      <AnimatedContent delay={0.05}>
-        <h2 className="section-title">Digital signatures</h2>
+      <Section id="signatures" title="Digital signatures" count={report.signatures.length}>
         <Signatures signatures={report.signatures} />
-      </AnimatedContent>
+      </Section>
 
-      {/* attribution & device traces */}
-      <AnimatedContent delay={0.05}>
-        <h2 className="section-title">
-          Attribution &amp; device traces
-          {s.attribution_signals > 0 && <span className="section-count">{s.attribution_signals}</span>}
-        </h2>
+      <Section id="graph" title="Consistency graph" count={g.contradiction_count}>
+        <DecgDiagram graph={g} />
+      </Section>
+
+      <Section id="attribution" title="Attribution & device traces" count={s.attribution_signals}>
         <AttributionView attribution={report.attribution} />
-      </AnimatedContent>
+      </Section>
 
-      {/* consistency graph */}
-      <AnimatedContent delay={0.05}>
-        <h2 className="section-title">
-          Consistency graph — {g.contradiction_count} contradiction{g.contradiction_count === 1 ? "" : "s"} /{" "}
-          {g.edge_count} checks · density {g.contradiction_density}
-        </h2>
-        <ConsistencyGraph graph={g} />
-      </AnimatedContent>
-
-      {/* ewdca */}
-      <AnimatedContent delay={0.05}>
-        <h2 className="section-title">EWDCA score model</h2>
+      <Section id="model" title="EWDCA score model">
         <EwdcaPanel ewdca={report.ewdca} />
-      </AnimatedContent>
-
-      {/* raw evidence */}
-      <AnimatedContent delay={0.05}>
-        <h2 className="section-title">Raw evidence</h2>
-        <EvidenceAccordion evidence={report.evidence} errors={report.errors} />
-      </AnimatedContent>
+        <div style={{ marginTop: 12 }}>
+          <EvidenceAccordion evidence={report.evidence} errors={report.errors} />
+        </div>
+      </Section>
 
       <motion.div
         className="rep__actions"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.25 }}
       >
         <GradientButton onClick={onReset}>
           <RotateCcw size={15} style={{ marginRight: 8, verticalAlign: "-2px" }} />

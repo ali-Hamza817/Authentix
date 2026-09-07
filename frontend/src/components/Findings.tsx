@@ -12,23 +12,17 @@ function FindingCard({ f, i }: { f: Finding; i: number }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: Math.min(i * 0.05, 0.35), ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.35, delay: Math.min(i * 0.04, 0.3), ease: [0.22, 1, 0.36, 1] }}
     >
       <SpotlightCard className="finding card" spotlightColor={stance.soft}>
         <div className="finding__bar" style={{ background: stance.color }} />
         <div className="finding__body">
           <div className="finding__head">
-            <span className="finding__stance" style={{ color: stance.color, background: stance.soft }}>
-              {stance.label}
-            </span>
             <h3 className="finding__title">{f.title}</h3>
-            <span className="finding__sev" style={{ color: sev.color }}>
-              {f.severity_label}
-            </span>
+            <span className="finding__sev" style={{ color: sev.color }}>{f.severity_label}</span>
           </div>
-
           <p className="finding__detail">{f.detail}</p>
 
           <button className="finding__toggle" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
@@ -36,34 +30,22 @@ function FindingCard({ f, i }: { f: Finding; i: number }) {
             reasoning
             <span className="finding__meta">
               {f.reliability != null && (
-                <span style={{ color: reliabilityTone(f.reliability) }}>
-                  reliability {f.reliability.toFixed(2)}
-                </span>
+                <span style={{ color: reliabilityTone(f.reliability) }}>reliability {f.reliability.toFixed(2)}</span>
               )}
-              {f.confidence !== "n/a" && <span>· confidence {f.confidence}</span>}
-              <span>· {f.category}</span>
+              {f.confidence !== "n/a" && <span>· {f.confidence} confidence</span>}
             </span>
           </button>
 
           {open && (
             <dl className="finding__chain">
-              <div>
-                <dt>Evidence</dt>
-                <dd>{f.reasoning.evidence}</dd>
-              </div>
-              <div>
-                <dt>Reasoning</dt>
-                <dd>{f.reasoning.reasoning}</dd>
-              </div>
-              <div>
-                <dt>Conclusion</dt>
-                <dd>{f.reasoning.conclusion}</dd>
-              </div>
+              <div><dt>Evidence</dt><dd>{f.reasoning.evidence}</dd></div>
+              <div><dt>Reasoning</dt><dd>{f.reasoning.reasoning}</dd></div>
+              <div><dt>Conclusion</dt><dd>{f.reasoning.conclusion}</dd></div>
               <div>
                 <dt>Reliability</dt>
                 <dd>
                   {f.reliability == null
-                    ? "n/a — this is an absence of evidence, interpreted as insufficient"
+                    ? "n/a — an absence of evidence, interpreted as insufficient"
                     : `${f.reliability.toFixed(2)} — ${stance.blurb}`}
                 </dd>
               </div>
@@ -75,6 +57,13 @@ function FindingCard({ f, i }: { f: Finding; i: number }) {
   );
 }
 
+const GROUPS: { stance: string; heading: string }[] = [
+  { stance: "contradicted", heading: "Contradictions" },
+  { stance: "insufficient", heading: "Insufficient evidence" },
+  { stance: "supported", heading: "Supporting" },
+  { stance: "neutral", heading: "Observations" },
+];
+
 export default function Findings({ findings }: { findings: Finding[] }) {
   if (findings.length === 0) {
     return (
@@ -84,11 +73,23 @@ export default function Findings({ findings }: { findings: Finding[] }) {
       </div>
     );
   }
+
+  let n = 0;
   return (
     <div className="findings">
-      {findings.map((f, i) => (
-        <FindingCard key={f.code + i} f={f} i={i} />
-      ))}
+      {GROUPS.map(({ stance, heading }) => {
+        const items = findings.filter((f) => f.stance === stance);
+        if (!items.length) return null;
+        return (
+          <div key={stance} className="findings__group">
+            <p className="findings__gh" style={{ color: (STANCE_META[stance] ?? STANCE_META.neutral).color }}>
+              <span className="findings__dot" />
+              {heading} <b>{items.length}</b>
+            </p>
+            {items.map((f) => <FindingCard key={f.code + f.title} f={f} i={n++} />)}
+          </div>
+        );
+      })}
     </div>
   );
 }

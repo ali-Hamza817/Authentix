@@ -103,23 +103,7 @@ button {
   box-shadow: var(--shadow-sm);
 }
 
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin: 44px 0 18px;
-}
-.section-title::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-}
+/* .section-title lives in Report.css */
 
 @media (prefers-reduced-motion: reduce) {
   *,

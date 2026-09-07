@@ -78,6 +78,7 @@ export interface GraphEdge {
   relation: string;
   status: "consistent" | "weak" | "contradiction";
   kappa: number;
+  reliability: number;
   expected: string;
   observed: string;
 }
@@ -90,6 +91,9 @@ export interface ConsistencyGraph {
   weak_count: number;
   contradiction_density: number;
   mean_kappa: number;
+  weighted_kappa?: number;
+  weighted_density?: number;
+  strongest_contradiction?: { edge: string; reliability: number; kappa: number } | null;
 }
 
 export interface Ewdca {
